@@ -23,6 +23,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\shaders\shader.glsl" />
+    <ClInclude Include="src\shaders\Shader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\shaders\shader.vs" />
+    <None Include="src\shaders\shader.fs" />
   </ItemGroup>
 </Project>
