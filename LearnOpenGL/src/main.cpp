@@ -1,10 +1,14 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <iostream>
 
 #include "shaders/Shader.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb/stb_image.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -159,6 +163,8 @@ int main()
 	ourShader.setInt("textureFace", 2);
 	ourShader.setInt("textureKeqing", 3);
 
+
+
 	//循环渲染
 	//每次循环检查窗口是否退出
 	while (!glfwWindowShouldClose(window))
@@ -169,6 +175,14 @@ int main()
 		//渲染指令
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		//随时间变换矩阵
+		glm::mat4 trans = glm::mat4(1.0f);
+		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+
+		unsigned int transformLoc = ourShader.getUniform("transform");
+		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
 
 		//随时间变色
 		float timeValue = (float)glfwGetTime();
@@ -191,6 +205,17 @@ int main()
 		glBindVertexArray(VAO);
 		//图元类型，起始索引，绘制顶点数量
 		//glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+		//随时间变换矩阵
+		trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(-0.5f, 0.5f, 0.0f));
+		trans = glm::scale(trans, glm::vec3(sin(glfwGetTime()) + 1.5f) / 3.0f);
+
+
+		transformLoc = ourShader.getUniform("transform");
+		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
