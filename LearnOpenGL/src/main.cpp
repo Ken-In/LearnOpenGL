@@ -3,6 +3,8 @@
 #include <iostream>
 
 #include "shaders/Shader.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -10,6 +12,59 @@ void processInput(GLFWwindow* window);
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+
+float mixValue = 0.2f;
+
+unsigned int loadTexture(const std::string& path)
+{
+	//创建并绑定纹理
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	//纹理环绕
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	//指定边框外颜色
+// 	float borderColor[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+// 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+	//纹理过滤
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	//mipmap
+// 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+// 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	//读入纹理图片，填充宽度、高度、通道数
+	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(true);
+	unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
+
+	//生成纹理
+	if (data)
+	{
+		if (nrChannels == 3)
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		}
+		else if (nrChannels == 4)
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		}
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cout << "Failed to load texture!" << std::endl;
+	}
+	//释放图像内存
+	stbi_image_free(data);
+
+	return texture;
+}
 
 int main()
 {
@@ -44,11 +99,11 @@ int main()
 
 	//顶点buffer
 	float vertices[] = {
-		// 位置              // 颜色
-		 0.5f,  0.5f, 0.0f,  1.0f, 0.0f, 0.0f, // 右下
-		 0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f, // 左下
-		-0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f, // 顶部
-		-0.5f,  0.5f, 0.0f,  0.0f, 0.0f, 0.0f  // 左上角
+		//     ---- 位置 ----       ---- 颜色 ----     - 纹理坐标 -
+			 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // 右上
+			 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // 右下
+			-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // 左下
+			-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // 左上
 	};
 
 	unsigned int indices[] = {
@@ -76,22 +131,39 @@ int main()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	//position
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	//color
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
+	//uv
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-
+	//-------------------------------------------------------------------
+	//纹理---------------------------------------------------------------
+	// ------------------------------------------------------------------
+	//创建并绑定纹理
+	unsigned int textureContainer = loadTexture("./assets/textures/container.jpg");
+	unsigned int textureWall = loadTexture("./assets/textures/wall.jpg");
+	unsigned int textureFace = loadTexture("./assets/textures/awesomeface.jpg");
+	unsigned int textureKeqing = loadTexture("./assets/textures/keqing.png");
+	
+	// 设置着色器采样器
+	ourShader.use();
+	ourShader.setInt("textureContainer", 0);
+	ourShader.setInt("textureWall", 1);
+	ourShader.setInt("textureFace", 2);
+	ourShader.setInt("textureKeqing", 3);
 
 	//循环渲染
 	//每次循环检查窗口是否退出
 	while (!glfwWindowShouldClose(window))
 	{
-		//Esc退出
+		//Esc 退出
 		processInput(window);
 
 		//渲染指令
@@ -104,21 +176,28 @@ int main()
 		int timeColorLocation = ourShader.getUniform("timeColor");
 		glUniform4f(timeColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
 
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureContainer);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, textureWall);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, textureFace);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, textureKeqing);
+
+		ourShader.setFloat("mixValue", mixValue);
 
 		ourShader.use();
-		float offset = 0.5f;
-		ourShader.setFloat("xOffset", offset);
-
 		glBindVertexArray(VAO);
 		//图元类型，起始索引，绘制顶点数量
 		//glDrawArrays(GL_TRIANGLES, 0, 3);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
-		//函数检查有没有触发时间：鼠标键盘、更新窗口等，并调用回调函数
-		glfwPollEvents();
 		//交换buffer
 		glfwSwapBuffers(window);
+		//函数检查有没有触发时间：鼠标键盘、更新窗口等，并调用回调函数
+		glfwPollEvents();
 		
 	}
 
@@ -136,6 +215,19 @@ void processInput(GLFWwindow* window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
+
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+	{
+		mixValue += 0.0003f;
+		if (mixValue >= 1.0f)
+			mixValue = 1.0f;
+	}
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+	{
+		mixValue -= 0.0003f;
+		if (mixValue <= 0.0f)
+			mixValue = 0.0f;
+	}
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes

@@ -26,6 +26,9 @@
     <ClInclude Include="src\shaders\Shader.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\vendor\stb\stb_image.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\shader.vs" />
