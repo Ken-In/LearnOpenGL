@@ -23,7 +23,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\shaders\Shader.h">
+    <ClInclude Include="src\Shaders\Shader.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\vendor\stb\stb_image.h">
@@ -34,9 +34,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\shaders\shader.vs" />
-    <None Include="src\shaders\shader.fs" />
-    <None Include="src\shaders\lightShader.vs" />
-    <None Include="src\shaders\lightShader.fs" />
+    <None Include="src\Shaders\shader.vs" />
+    <None Include="src\Shaders\shader.fs" />
+    <None Include="src\Shaders\lightShader.vs" />
+    <None Include="src\Shaders\lightShader.fs" />
   </ItemGroup>
 </Project>

@@ -117,7 +117,7 @@ public:
 		glUniform3f(locationID, v0, v1, v2);
 	}
 
-	void setVec3(const std::string& name, glm::vec3& value) const
+	void setVec3(const std::string& name, glm::vec3 value) const
 	{
 		unsigned int locationID = this->getUniform(name);
 		glUniform3f(locationID, value.x, value.y, value.z);

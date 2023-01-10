@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-#include "shaders/Shader.h"
+#include "Shaders/Shader.h"
 #include "Camera/Camera.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -248,10 +248,6 @@ int main()
 		deltaTime = currentFrame - lastTime;
 		lastTime = currentFrame;
 
-		float lightOffset = sin(glfwGetTime()) * 3.f;
-		lightPos.x = lightOffset;
-		lightPos.z = lightOffset;
-
 		//‰÷»æ÷∏¡Ó
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -277,6 +273,15 @@ int main()
 		ourShader.setVec3("lightPos", lightPos);
 		ourShader.setVec3("cameraPos", ourCamera.Position);
 
+		ourShader.setVec3("material.ambient", 0.0f, 0.1f, 0.06f);
+		ourShader.setVec3("material.diffuse", 0.0f, 0.50980392f, 0.50980392f);
+		ourShader.setVec3("material.specular", 0.50196078f, 0.50196078f, 0.50196078f);
+		ourShader.setFloat("material.shininess", 32.0f);
+
+		ourShader.setVec3("light.ambient", 1.0f, 1.0f, 1.0f);
+		ourShader.setVec3("light.diffuse", lightColor);
+		ourShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
 		glm::mat4 model(1.0f);
 		ourShader.setMat4("model", model);
 		ourShader.setMat4("view", view);
@@ -291,6 +296,8 @@ int main()
 		lightShader.setMat4("model", model);
 		lightShader.setMat4("view", view);
 		lightShader.setMat4("projection", projection);
+		lightShader.setVec3("lightColor", lightColor);
+
 
 		glBindVertexArray(lightVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
