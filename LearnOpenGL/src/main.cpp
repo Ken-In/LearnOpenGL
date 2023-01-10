@@ -9,13 +9,27 @@
 #include <iostream>
 
 #include "shaders/Shader.h"
+#include "Camera/Camera.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
-
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+
+//Camera
+Camera ourCamera(glm::vec3(0.0f, 0.0f, 3.0f));
+
+//timer
+float deltaTime = 0.0f;
+float lastTime = 0.0f;
+
+//mouse
+float lastX = SCR_HEIGHT / 2.f;
+float lastY = SCR_WIDTH / 2.f;
+bool firstMouse = true;
 
 float mixValue = 0.2f;
 float angle = -55.f;
@@ -90,6 +104,12 @@ int main()
 	glfwMakeContextCurrent(window);
 	//设置回调函数
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	//隐藏光标
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	//注册了鼠标函数
+	glfwSetCursorPosCallback(window, mouse_callback);
+	//滚轮回调函数
+	glfwSetScrollCallback(window, scroll_callback);
 
 	//初始化glad
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -207,12 +227,13 @@ int main()
 	unsigned int textureFace = loadTexture("./assets/textures/awesomeface.jpg");
 	unsigned int textureKeqing = loadTexture("./assets/textures/keqing.png");
 	
-	// 设置着色器采样器
+	//设置着色器采样器
 	ourShader.use();
 	ourShader.setInt("textureContainer", 0);
 	ourShader.setInt("textureWall", 1);
 	ourShader.setInt("textureFace", 2);
 	ourShader.setInt("textureKeqing", 3);
+
 
 	//循环渲染
 	//每次循环检查窗口是否退出
@@ -220,6 +241,11 @@ int main()
 	{
 		//Esc 退出
 		processInput(window);
+
+		//timer
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastTime;
+		lastTime = currentFrame;
 
 		//渲染指令
 		glEnable(GL_DEPTH_TEST);
@@ -232,8 +258,8 @@ int main()
 		glm::mat4 projection(1.0f);
 
 		model = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(1.0f, 1.0f, 0.0f));
-		view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
-		projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		view = ourCamera.GetViewMatrix();
+		projection = glm::perspective(glm::radians(ourCamera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
 		ourShader.setMat4("model", model);
 		ourShader.setMat4("view", view);
@@ -296,6 +322,28 @@ int main()
 	return 0;
 }
 
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	if (firstMouse) // 这个bool变量初始时是设定为true的
+	{		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+	
+	float xOffset = xpos - lastX;
+	float yOffset = lastY - ypos;
+
+	lastX = xpos;
+	lastY = ypos;
+
+	ourCamera.ProcessMouseMovement(xOffset, yOffset);
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	ourCamera.ProcessMouseScroll(yoffset);
+}
+
 // process all input: query GLFW whether relevant keys 
 void processInput(GLFWwindow* window)
 {
@@ -314,16 +362,19 @@ void processInput(GLFWwindow* window)
 		if (mixValue <= 0.0f)
 			mixValue = 0.0f;
 	}
-
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-	{
 		angle -= 0.05f;
-	}
-
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-	{
 		angle += 0.05f;
-	}
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		ourCamera.ProcessKeyboard(Camera_Movement::FORWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		ourCamera.ProcessKeyboard(Camera_Movement::BACKWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		ourCamera.ProcessKeyboard(Camera_Movement::LEFT, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		ourCamera.ProcessKeyboard(Camera_Movement::RIGHT, deltaTime);
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
