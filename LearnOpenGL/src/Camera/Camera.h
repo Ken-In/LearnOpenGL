@@ -62,15 +62,18 @@ public:
 		return calculateLookAt(Position, Position + Front, Up);
 	}
 
+	glm::mat4 GetVP(float aspect, float near, float far)
+	{
+		return glm::perspective(glm::radians(this->Zoom), aspect, near, far) * this->GetViewMatrix();
+	}
+
 	void ProcessKeyboard(Camera_Movement direction, float deltaTime)
 	{
 		float velocity = MovementSpeed * deltaTime;
-		glm::vec3 Move = Front;
-		Move.y = 0.0f;
 		if (direction == FORWARD)
-			Position += Move * velocity;
+			Position += Front * velocity;
 		if (direction == BACKWARD)
-			Position -= Move * velocity;
+			Position -= Front * velocity;
 		if (direction == LEFT)
 			Position -= Right * velocity;
 		if (direction == RIGHT)

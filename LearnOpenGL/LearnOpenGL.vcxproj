@@ -158,6 +158,8 @@
     <ClInclude Include="src\vendor\stb\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="src\shaders\lightShader.fs" />
+    <None Include="src\shaders\lightShader.vs" />
     <None Include="src\shaders\shader.fs" />
     <None Include="src\shaders\shader.vs" />
   </ItemGroup>
