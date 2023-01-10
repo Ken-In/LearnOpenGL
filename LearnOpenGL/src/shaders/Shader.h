@@ -111,7 +111,20 @@ public:
 		glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
 	}
 
-	GLint getUniform(const std::string& name)
+	void setFloat4(const std::string& name, float v0, float v1, float v2, float v3) const
+	{
+		unsigned int locationID = this->getUniform(name);
+		glUniform4f(locationID, v0, v1, v2, v3);
+	}
+
+
+	void setMat4(const std::string& name, glm::mat4& value) const
+	{
+		unsigned int locationID = this->getUniform(name);
+		glUniformMatrix4fv(locationID, 1, GL_FALSE, glm::value_ptr(value));
+	}
+
+	GLint getUniform(const std::string& name) const
 	{
 		return glGetUniformLocation(ID, name.c_str());
 	}
