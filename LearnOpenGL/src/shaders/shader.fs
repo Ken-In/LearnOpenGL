@@ -67,11 +67,11 @@ void main()
     vec3 viewDir = normalize(cameraPos - WorldPos.xyz);
     vec3 normal = normalize(Normal);
     
-    //vec3 result = CalcDirLight(dirLight, normal, viewDir);
     vec3 result;
+    //vec3 result = CalcDirLight(dirLight, normal, viewDir);
 
     //for(int i = 0; i < NR_POINT_LIGHTS; i++)
-        //result += CalcPointLight(pointLights[i], normal, WorldPos.xyz, viewDir);
+    //    result += CalcPointLight(pointLights[i], normal, WorldPos.xyz, viewDir);
 
     result += CalcSpotLight(spotLight, normal, WorldPos.xyz, viewDir);
 
