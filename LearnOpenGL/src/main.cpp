@@ -224,17 +224,20 @@ int main()
 	unsigned int textureWall = loadTexture("./assets/textures/wall.jpg");
 	unsigned int textureFace = loadTexture("./assets/textures/awesomeface.jpg");
 	unsigned int textureKeqing = loadTexture("./assets/textures/keqing.png");
+	unsigned int textureContainer2 = loadTexture("./assets/textures/container2.png");
+	unsigned int textureContainer2Spec = loadTexture("./assets/textures/container2_specular.png");
+	unsigned int textureMatrix = loadTexture("./assets/textures/matrix.jpg");
+	//unsigned int textureContainer2Spec = loadTexture("./assets/textures/lighting_maps_specular_color.png");
 	
+	
+
 	//-------------------------------------------------------------
 	//shader-------------------------------------------------------
 	// ------------------------------------------------------------
 	
 	//设置纹理采样器
 	ourShader.use();
-	ourShader.setInt("textureContainer", 0);
-	ourShader.setInt("textureWall", 1);
-	ourShader.setInt("textureFace", 2);
-	ourShader.setInt("textureKeqing", 3);
+	
 
 	//循环渲染
 	//每次循环检查窗口是否退出
@@ -256,6 +259,11 @@ int main()
 		glm::mat4 view = ourCamera.GetViewMatrix();
 		glm::mat4 projection = glm::perspective(glm::radians(ourCamera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
+		
+
+		//cube绘制
+		ourShader.use();
+
 		//纹理槽位
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureContainer);
@@ -265,21 +273,28 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, textureFace);
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, textureKeqing);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, textureContainer2);
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, textureContainer2Spec);
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_2D, textureMatrix);
 
-		//cube绘制
-		ourShader.use();
-		ourShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-		ourShader.setVec3("lightColor", lightColor);
-		ourShader.setVec3("lightPos", lightPos);
+		ourShader.setInt("textureContainer", 0);
+		ourShader.setInt("textureWall", 1);
+		ourShader.setInt("textureFace", 2);
+		ourShader.setInt("textureKeqing", 3);
+		ourShader.setInt("material.diffuse", 4);
+		ourShader.setInt("material.specular", 5);
+		ourShader.setInt("material.emission", 6);
+
 		ourShader.setVec3("cameraPos", ourCamera.Position);
 
-		ourShader.setVec3("material.ambient", 0.0f, 0.1f, 0.06f);
-		ourShader.setVec3("material.diffuse", 0.0f, 0.50980392f, 0.50980392f);
-		ourShader.setVec3("material.specular", 0.50196078f, 0.50196078f, 0.50196078f);
 		ourShader.setFloat("material.shininess", 32.0f);
 
-		ourShader.setVec3("light.ambient", 1.0f, 1.0f, 1.0f);
-		ourShader.setVec3("light.diffuse", lightColor);
+		ourShader.setVec3("light.position", lightPos);
+		ourShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+		ourShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
 		ourShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
 		glm::mat4 model(1.0f);
@@ -296,6 +311,7 @@ int main()
 		lightShader.setMat4("model", model);
 		lightShader.setMat4("view", view);
 		lightShader.setMat4("projection", projection);
+
 		lightShader.setVec3("lightColor", lightColor);
 
 
