@@ -33,9 +33,8 @@ bool firstMouse = true;
 
 //light
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+glm::vec3 lightDirection(-0.2f, -1.0f, -0.3f);
 glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-
-float matrixMove = 0.0f;
 
 unsigned int loadTexture(const std::string& path)
 {
@@ -182,6 +181,19 @@ int main()
 		1, 2, 3  // 第二个三角形
 	};
 
+	glm::vec3 cubePositions[] = {
+	glm::vec3(0.0f,  0.0f,  0.0f),
+	glm::vec3(2.0f,  5.0f, -15.0f),
+	glm::vec3(-1.5f, -2.2f, -2.5f),
+	glm::vec3(-3.8f, -2.0f, -12.3f),
+	glm::vec3(2.4f, -0.4f, -3.5f),
+	glm::vec3(-1.7f,  3.0f, -7.5f),
+	glm::vec3(1.3f, -2.0f, -2.5f),
+	glm::vec3(1.5f,  2.0f, -2.5f),
+	glm::vec3(1.5f,  0.2f, -1.5f),
+	glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
+
 	//创建VAO VBO顶点缓冲 EBO索引缓冲
 	unsigned int VAO, VBO; // EBO;
 	glGenVertexArrays(1, &VAO);
@@ -279,8 +291,6 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, textureContainer2);
 		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_2D, textureContainer2Spec);
-		glActiveTexture(GL_TEXTURE6);
-		glBindTexture(GL_TEXTURE_2D, textureMatrix);
 
 		ourShader.setInt("textureContainer", 0);
 		ourShader.setInt("textureWall", 1);
@@ -288,38 +298,42 @@ int main()
 		ourShader.setInt("textureKeqing", 3);
 		ourShader.setInt("material.diffuse", 4);
 		ourShader.setInt("material.specular", 5);
-		ourShader.setInt("material.emission", 6);
-
-		
 
 		ourShader.setVec3("cameraPos", ourCamera.Position);
 
 		ourShader.setFloat("material.shininess", 32.0f);
-		matrixMove += deltaTime * 0.1f;
-		ourShader.setFloat("matrixMove", matrixMove);
 
-		ourShader.setVec3("light.position", lightPos);
+		//平行光和聚光
+		ourShader.setVec3("light.direction", ourCamera.Front);
+		ourShader.setVec3("light.position", ourCamera.Position);
+		ourShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
+		ourShader.setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
 		ourShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
 		ourShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
 		ourShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+		ourShader.setFloat("light.constant", 1.0f);
+		ourShader.setFloat("light.linear", 0.09f);
+		ourShader.setFloat("light.quadratic", 0.032f);
 
-		glm::mat4 model(1.0f);
-		ourShader.setMat4("model", model);
 		ourShader.setMat4("view", view);
 		ourShader.setMat4("projection", projection);
 
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		for (int i = 0; i < 10; i++)
+		{
+			glm::mat4 model = glm::translate(glm::mat4(1.0f), cubePositions[i]) * glm::rotate(glm::mat4(1.0f), glm::radians( - i * 5.0f), glm::vec3(1.0f, 0.0f, 1.0f));
+			ourShader.setMat4("model", model);
+			glBindVertexArray(VAO);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 
 		//光源绘制
 		lightShader.use();
-		model = glm::translate(glm::mat4(1.0f), lightPos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.2f));
+		glm::mat4 model = glm::translate(glm::mat4(1.0f), lightPos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.2f));
 		lightShader.setMat4("model", model);
 		lightShader.setMat4("view", view);
 		lightShader.setMat4("projection", projection);
 
 		lightShader.setVec3("lightColor", lightColor);
-
 
 		glBindVertexArray(lightVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
