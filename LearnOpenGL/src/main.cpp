@@ -7,9 +7,12 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
+#include <vector>
 
 #include "Shaders/Shader.h"
 #include "Camera/Camera.h"
+
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -354,7 +357,7 @@ int main()
 		ourShader.setVec3("spotLight.direction", ourCamera.Front);
 		ourShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
 		ourShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(17.5f)));
-		ourShader.setVec3("spotLight.ambient", 0.12f, 0.12f, 0.12f);
+		ourShader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
 		ourShader.setVec3("spotLight.diffuse", 0.8f, 0.5f, 0.5f);
 		ourShader.setVec3("spotLight.specular", 0.2f, 0.2f, 0.2f);
 

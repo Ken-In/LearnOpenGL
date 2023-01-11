@@ -1,0 +1,10 @@
+C:/dev/C++/LearnOpenGL/vendor/assimp-5.2.5/CMakeFiles/uninstall.dir
+C:/dev/C++/LearnOpenGL/vendor/assimp-5.2.5/CMakeFiles/UpdateAssimpLibsDebugSymbolsAndDLLs.dir
+C:/dev/C++/LearnOpenGL/vendor/assimp-5.2.5/CMakeFiles/INSTALL.dir
+C:/dev/C++/LearnOpenGL/vendor/assimp-5.2.5/CMakeFiles/ALL_BUILD.dir
+C:/dev/C++/LearnOpenGL/vendor/assimp-5.2.5/CMakeFiles/ZERO_CHECK.dir
+C:/dev/C++/LearnOpenGL/vendor/assimp-5.2.5/code/CMakeFiles/assimp.dir
+C:/dev/C++/LearnOpenGL/vendor/assimp-5.2.5/code/CMakeFiles/INSTALL.dir
+C:/dev/C++/LearnOpenGL/vendor/assimp-5.2.5/test/CMakeFiles/unit.dir
+C:/dev/C++/LearnOpenGL/vendor/assimp-5.2.5/test/CMakeFiles/INSTALL.dir
+C:/dev/C++/LearnOpenGL/vendor/assimp-5.2.5/test/headercheck/CMakeFiles/INSTALL.dir
