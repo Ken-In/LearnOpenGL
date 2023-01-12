@@ -5,7 +5,8 @@
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 
-unsigned int TextureFromFile(const char* path, const std::string& directory);
+unsigned int TextureFromFile(const char* path, const std::string& directory, GLint wrapMode = GL_REPEAT, GLint MagFilterMode = GL_LINEAR, GLint MinFilterMode = GL_LINEAR_MIPMAP_LINEAR);
+GLuint TextureFromAssImp(const aiTexture* aiTex, GLint wrapMode = GL_REPEAT, GLint MagFilterMode = GL_LINEAR, GLint MinFilterMode = GL_LINEAR_MIPMAP_LINEAR);
 
 void Model::Draw(Shader& shader)
 {
@@ -13,7 +14,7 @@ void Model::Draw(Shader& shader)
 		mesh.Draw(shader);
 }
 
-void Model::loadModel(std::string& path)
+void Model::loadModel(std::string path)
 {
 	Assimp::Importer importer;
 	//将模型的图元变换为三角形 翻转y轴
@@ -26,7 +27,6 @@ void Model::loadModel(std::string& path)
 	}
 	//文件的目录路径
 	directory = path.substr(0, path.find_last_of('/'));
-
 	processNode(scene->mRootNode, scene);
 }
 
@@ -97,22 +97,22 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 	//从场景mMaterials数组中获取mesh的材质数组
 	aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-	std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+	std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", scene);
 	textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-	std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+	std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular", scene);
 	textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-	std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+	std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal", scene);
 	textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
-	std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
+	std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height", scene);
 	textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
 	return Mesh(vertices, indices, textures);
 }
 
-std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
+std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, const aiScene* scene)
 {
 	std::vector<Texture> textures;
 	for (int i = 0; i < mat->GetTextureCount(type); i++)
@@ -130,7 +130,12 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
 		else
 		{
 			Texture texture;
-			texture.id = TextureFromFile(str.C_Str(), directory);
+
+			auto aiTexture = scene->GetEmbeddedTexture(str.C_Str());
+			if (aiTexture != nullptr)
+				texture.id = TextureFromAssImp(aiTexture);
+			else
+				texture.id = TextureFromFile(str.C_Str(), directory);
 			texture.type = typeName;
 			texture.path = str.C_Str();
 			textures.push_back(texture);
@@ -141,7 +146,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
 }
 
 // 加载一个纹理并返回该纹理的ID
-unsigned int TextureFromFile(const char* path, const std::string& directory)
+unsigned int TextureFromFile(const char* path, const std::string& directory, GLint wrapMode, GLint MagFilterMode, GLint MinFilterMode)
 {
 	std::string filename = path;
 	filename = directory + '/' + filename;
@@ -169,20 +174,63 @@ unsigned int TextureFromFile(const char* path, const std::string& directory)
 		glGenerateMipmap(GL_TEXTURE_2D);
 
 		//纹理环绕
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapMode);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapMode);
 		
 		//mipmap
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		stbi_image_free(data);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, MinFilterMode);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, MagFilterMode);
 	}
 	else
 	{
 		std::cout << "Texture failed to load at path: " << filename << std::endl;
-		stbi_image_free(data);
+	}
+	stbi_image_free(data);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	return textureID;
+}
+
+GLuint TextureFromAssImp(const aiTexture* aiTex, GLint wrapMode, GLint MagFilterMode, GLint MinFilterMode)
+{
+	if (aiTex == nullptr)
+		return 0;
+	unsigned int textureID = 0;
+	glGenTextures(GL_TEXTURE_2D, &textureID);
+
+	//纹理环绕
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapMode);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapMode);
+
+	//mipmap
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, MinFilterMode);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, MagFilterMode);
+
+	int width, height, nrChannels;
+	unsigned char* image_data = nullptr;
+	if (aiTex->mHeight == 0)
+	{
+		image_data = stbi_load_from_memory(reinterpret_cast<unsigned char*>(aiTex->pcData), aiTex->mWidth, &width, &height, &nrChannels, 0);
+	}
+	else
+	{
+		image_data = stbi_load_from_memory(reinterpret_cast<unsigned char*>(aiTex->pcData), aiTex->mWidth * aiTex->mHeight, &width, &height, &nrChannels, 0);
 	}
 
+	if (image_data != nullptr)
+	{
+		GLenum format;
+		if (nrChannels == 1)
+			format = GL_RED;
+		else if (nrChannels == 3)
+			format = GL_RGB;
+		else if (nrChannels == 4)
+			format = GL_RGBA;
+		else
+			assert(0, "Invalid texture format!");
+
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, image_data);
+	}
+
+	glGenerateMipmap(GL_TEXTURE_2D);
 	return textureID;
 }

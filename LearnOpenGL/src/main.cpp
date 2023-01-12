@@ -68,6 +68,8 @@ int main()
 	Shader modelShader("./src/shaders/model_loading.vs", "./src/shaders/model_loading.fs");
 
 	Model ourModel("./assets/models/nanosuit/nanosuit.obj");
+	//Model ourModel("./assets/models/IronMan/IronMan.obj");
+	//Model ourModel("./assets/models/Ganyu/body.obj");
 
 	//循环渲染
 	//每次循环检查窗口是否退出

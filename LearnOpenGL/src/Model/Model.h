@@ -13,7 +13,7 @@ public:
 	std::vector<Mesh> meshes;
 	std::string directory;
 
-	Model(std::string path)
+	Model(const char* path)
 	{
 		loadModel(path);
 	}
@@ -21,8 +21,8 @@ public:
 	void Draw(Shader& shader);
 
 private:
-	void loadModel(std::string& path);
+	void loadModel(std::string path);
 	void processNode(aiNode* node, const aiScene* scene);
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene);
-	std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName);
+	std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, const aiScene* scene);
 };
