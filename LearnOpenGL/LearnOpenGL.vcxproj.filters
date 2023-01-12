@@ -21,7 +21,10 @@
     <ClCompile Include="src\glad.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\Mesh\Mesh.cpp">
+    <ClCompile Include="src\Model\Mesh.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Model\Model.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,7 +38,10 @@
     <ClInclude Include="src\Camera\Camera.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\Mesh\Mesh.h">
+    <ClInclude Include="src\Model\Mesh.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Model\Model.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -44,5 +50,7 @@
     <None Include="src\Shaders\shader.fs" />
     <None Include="src\Shaders\lightShader.vs" />
     <None Include="src\Shaders\lightShader.fs" />
+    <None Include="src\Shaders\model_loading.vs" />
+    <None Include="src\Shaders\model_loading.fs" />
   </ItemGroup>
 </Project>

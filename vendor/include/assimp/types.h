@@ -268,7 +268,6 @@ struct aiString {
     /** Default constructor, the string is set to have zero length */
     aiString() AI_NO_EXCEPT
             : length(0) {
-        data[0] = '\0';
 
 #ifdef ASSIMP_BUILD_DEBUG
         // Debug build: overwrite the string on its full length with ESC (27)

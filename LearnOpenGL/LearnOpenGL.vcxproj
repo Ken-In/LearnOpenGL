@@ -77,13 +77,13 @@
     <LibraryPath>$(SolutionDir)vendor\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LibraryPath>$(SolutionDir)vendor\lib;$(SolutionDir)vendor\dll;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(SolutionDir)vendor\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
     <OutDir>$(SolutionDir)\bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\bin-int\$(Configuration)\</IntDir>
     <IncludePath>$(SolutionDir)vendor\include;$(SolutionDir)LearnOpenGL\src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LibraryPath>$(SolutionDir)vendor\lib;$(SolutionDir)vendor\dll;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(SolutionDir)vendor\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
     <OutDir>$(SolutionDir)\bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\bin-int\$(Configuration)\</IntDir>
     <IncludePath>$(SolutionDir)vendor\include;$(SolutionDir)LearnOpenGL\src;$(IncludePath)</IncludePath>
@@ -151,17 +151,21 @@
   <ItemGroup>
     <ClCompile Include="src\glad.c" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\Mesh\Mesh.cpp" />
+    <ClCompile Include="src\Model\Mesh.cpp" />
+    <ClCompile Include="src\Model\Model.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Camera\Camera.h" />
-    <ClInclude Include="src\Mesh\Mesh.h" />
+    <ClInclude Include="src\Model\Mesh.h" />
+    <ClInclude Include="src\Model\Model.h" />
     <ClInclude Include="src\Shaders\Shader.h" />
     <ClInclude Include="src\vendor\stb\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Shaders\lightShader.fs" />
     <None Include="src\Shaders\lightShader.vs" />
+    <None Include="src\Shaders\model_loading.fs" />
+    <None Include="src\Shaders\model_loading.vs" />
     <None Include="src\Shaders\shader.fs" />
     <None Include="src\Shaders\shader.vs" />
   </ItemGroup>
