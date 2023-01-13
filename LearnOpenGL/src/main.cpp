@@ -67,7 +67,8 @@ int main()
 	//glDepthMask(GL_FALSE);//执行深度测试并丢弃片段，不更新深度缓冲
 	//glDepthFunc(GL_LESS);//设置比较函数 默认GL_LESS
 
-
+	glEnable(GL_CULL_FACE);
+	//glFrontFace(GL_CW);//将顺时针的面定义为正向面：
 
 	//Shader ourShader("./src/shaders/depthShader.vs", "./src/shaders/depthShader.fs");
 	Shader ourShader("./src/Shaders/model_loading.vs", "./src/Shaders/model_loading.fs");
