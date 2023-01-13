@@ -65,21 +65,60 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 	//glDepthMask(GL_FALSE);//执行深度测试并丢弃片段，不更新深度缓冲
-	glDepthFunc(GL_LESS);//设置比较函数 默认GL_LESS
+	//glDepthFunc(GL_LESS);//设置比较函数 默认GL_LESS
 
-	glEnable(GL_STENCIL_TEST);
-	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
 
 	//Shader ourShader("./src/shaders/depthShader.vs", "./src/shaders/depthShader.fs");
 	Shader ourShader("./src/Shaders/model_loading.vs", "./src/Shaders/model_loading.fs");
 	Shader shaderSingleColor("./src/Shaders/shaderSingleColor.vs", "./src/Shaders/shaderSingleColor.fs");
-
+	Shader blendShader("./src/Shaders/blendShader.vs", "./src/Shaders/blendShader.fs");
+	
 	//Model ourModel("./assets/models/rock/rock.obj");
 	//Model ourModel("./assets/models/backpack/backpack.obj");
 	Model ourModel("./assets/models/nanosuit/nanosuit.obj");
 	//Model ourModel("./assets/models/Ganyu/body.obj");
 
+	std::vector<glm::vec3> vegetation;
+	vegetation.push_back(glm::vec3(-0.3f, 0.0f, -2.3f));
+	vegetation.push_back(glm::vec3(0.5f, 0.0f, -0.6f));
+	vegetation.push_back(glm::vec3(-1.5f, 0.0f, -0.48f));
+	vegetation.push_back(glm::vec3(1.5f, 0.0f, 0.51f));
+	vegetation.push_back(glm::vec3(0.0f, 0.0f, 0.7f));
+
+	std::map<float, glm::vec3> sorted;
+	for (int i = 0; i < vegetation.size(); i++)
+	{
+		float distance = vegetation[i].z;
+		sorted[distance] = vegetation[i];
+	}
+
+	float transparentVertices[] = {
+		// positions         // texture Coords (swapped y coordinates because texture is flipped upside down)
+		0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+		0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
+		1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+
+		0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+		1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+		1.0f,  0.5f,  0.0f,  1.0f,  0.0f
+	};
+
+	unsigned int transparentVAO, transparentVBO;
+	glGenVertexArrays(1, &transparentVAO);
+	glGenBuffers(1, &transparentVBO);
+	glBindVertexArray(transparentVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glBindVertexArray(0);
+
+	unsigned int transparentTexture = loadTexture("./assets/textures/grass.png");
+	unsigned int windowTexture = loadTexture("./assets/textures/window.png");
+	
 	//循环渲染
 	//每次循环检查窗口是否退出
 	while (!glfwWindowShouldClose(window))
@@ -111,27 +150,26 @@ int main()
 		model *= glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, 0.1f));
 		ourShader.setMat4("model", model);
 
-		shaderSingleColor.use();
-		shaderSingleColor.setMat4("view", view);
-		shaderSingleColor.setMat4("projection", projection);
-		model *= glm::scale(glm::mat4(1.0f), glm::vec3(1.01f, 1.01f, 1.01f));
-		shaderSingleColor.setMat4("model", model);
-
-		//画model
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);// 所有的片段都应该更新模板缓冲
-		glStencilMask(0xFF);// 启用模板缓冲写入
 		ourModel.Draw(ourShader);
 
-		//画边框
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);// 缓冲区不为1时 通过测试
-		glStencilMask(0x00);// 禁止模板缓冲的写入
-		//glDisable(GL_DEPTH_TEST);// 禁止深度测试
-		ourModel.Draw(shaderSingleColor);
+		//alpha
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		blendShader.use();
+		blendShader.setMat4("view", view);
+		blendShader.setMat4("projection", projection);
+
+		glBindVertexArray(transparentVAO);
+		glBindTexture(GL_TEXTURE_2D, windowTexture);
+		for (auto it = sorted.begin(); it != sorted.end(); ++it)
+		{
+			model = glm::translate(glm::mat4(1.0f), it->second);
+			blendShader.setMat4("model", model);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
 
 		glBindVertexArray(0);
-		glStencilMask(0xFF);
-		glStencilFunc(GL_ALWAYS, 0, 0xFF);
-		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
 		//交换buffer
 		glfwSwapBuffers(window);
 		//函数检查有没有触发时间：鼠标键盘、更新窗口等，并调用回调函数
@@ -193,25 +231,9 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 unsigned int loadTexture(const std::string& path)
 {
 	//创建并绑定纹理
-	unsigned int texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-	//纹理环绕
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	//指定边框外颜色
-// 	float borderColor[] = { 1.0f, 0.0f, 0.0f, 1.0f };
-// 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-	//纹理过滤
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	//mipmap
-// 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-// 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
 
 	//读入纹理图片，填充宽度、高度、通道数
 	int width, height, nrChannels;
@@ -221,15 +243,23 @@ unsigned int loadTexture(const std::string& path)
 	//生成纹理
 	if (data)
 	{
-		if (nrChannels == 3)
-		{
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		}
+		GLenum format;
+		if (nrChannels == 1)
+			format = GL_RED;
+		else if (nrChannels == 3)
+			format = GL_RGB;
 		else if (nrChannels == 4)
-		{
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		}
+			format = GL_RGBA;
+
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
+		//纹理环绕
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+		//纹理过滤
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 	else
 	{
@@ -238,5 +268,5 @@ unsigned int loadTexture(const std::string& path)
 	//释放图像内存
 	stbi_image_free(data);
 
-	return texture;
+	return textureID;
 }

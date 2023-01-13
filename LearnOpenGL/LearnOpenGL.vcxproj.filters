@@ -58,5 +58,7 @@
     <None Include="src\Shaders\stencilShader.fs" />
     <None Include="src\Shaders\shaderSingleColor.vs" />
     <None Include="src\Shaders\shaderSingleColor.fs" />
+    <None Include="src\Shaders\blendShader.vs" />
+    <None Include="src\Shaders\blendShader.fs" />
   </ItemGroup>
 </Project>

@@ -162,6 +162,8 @@
     <ClInclude Include="src\vendor\stb\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="src\Shaders\blendShader.fs" />
+    <None Include="src\Shaders\blendShader.vs" />
     <None Include="src\Shaders\depthShader.fs" />
     <None Include="src\Shaders\depthShader.vs" />
     <None Include="src\Shaders\lightShader.fs" />
