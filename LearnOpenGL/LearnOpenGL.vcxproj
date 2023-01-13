@@ -170,6 +170,10 @@
     <None Include="src\Shaders\model_loading.vs" />
     <None Include="src\Shaders\shader.fs" />
     <None Include="src\Shaders\shader.vs" />
+    <None Include="src\Shaders\shaderSingleColor.fs" />
+    <None Include="src\Shaders\shaderSingleColor.vs" />
+    <None Include="src\Shaders\stencilShader.fs" />
+    <None Include="src\Shaders\stencilShader.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

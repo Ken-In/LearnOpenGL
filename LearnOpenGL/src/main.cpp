@@ -67,8 +67,13 @@ int main()
 	//glDepthMask(GL_FALSE);//执行深度测试并丢弃片段，不更新深度缓冲
 	glDepthFunc(GL_LESS);//设置比较函数 默认GL_LESS
 
-	Shader ourShader("./src/shaders/depthShader.vs", "./src/shaders/depthShader.fs");
-	//Shader ourShader("./src/shaders/model_loading.vs", "./src/shaders/model_loading.fs");
+	glEnable(GL_STENCIL_TEST);
+	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+	//Shader ourShader("./src/shaders/depthShader.vs", "./src/shaders/depthShader.fs");
+	Shader ourShader("./src/Shaders/model_loading.vs", "./src/Shaders/model_loading.fs");
+	Shader shaderSingleColor("./src/Shaders/shaderSingleColor.vs", "./src/Shaders/shaderSingleColor.fs");
 
 	//Model ourModel("./assets/models/rock/rock.obj");
 	//Model ourModel("./assets/models/backpack/backpack.obj");
@@ -87,9 +92,10 @@ int main()
 		deltaTime = currentFrame - lastTime;
 		lastTime = currentFrame;
 
+
 		//渲染指令
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		ourShader.use();
 
@@ -98,13 +104,34 @@ int main()
 		glm::mat4 projection = glm::perspective(glm::radians(ourCamera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		ourShader.setMat4("view", view);
 		ourShader.setMat4("projection", projection);
+		
 
 		glm::mat4 model(1.0f);
 		model *= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 		model *= glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, 0.1f));
 		ourShader.setMat4("model", model);
+
+		shaderSingleColor.use();
+		shaderSingleColor.setMat4("view", view);
+		shaderSingleColor.setMat4("projection", projection);
+		model *= glm::scale(glm::mat4(1.0f), glm::vec3(1.01f, 1.01f, 1.01f));
+		shaderSingleColor.setMat4("model", model);
+
+		//画model
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);// 所有的片段都应该更新模板缓冲
+		glStencilMask(0xFF);// 启用模板缓冲写入
 		ourModel.Draw(ourShader);
 
+		//画边框
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);// 缓冲区不为1时 通过测试
+		glStencilMask(0x00);// 禁止模板缓冲的写入
+		//glDisable(GL_DEPTH_TEST);// 禁止深度测试
+		ourModel.Draw(shaderSingleColor);
+
+		glBindVertexArray(0);
+		glStencilMask(0xFF);
+		glStencilFunc(GL_ALWAYS, 0, 0xFF);
+		glEnable(GL_DEPTH_TEST);
 		//交换buffer
 		glfwSwapBuffers(window);
 		//函数检查有没有触发时间：鼠标键盘、更新窗口等，并调用回调函数

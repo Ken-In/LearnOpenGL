@@ -54,5 +54,9 @@
     <None Include="src\Shaders\model_loading.fs" />
     <None Include="src\Shaders\depthShader.vs" />
     <None Include="src\Shaders\depthShader.fs" />
+    <None Include="src\Shaders\stencilShader.vs" />
+    <None Include="src\Shaders\stencilShader.fs" />
+    <None Include="src\Shaders\shaderSingleColor.vs" />
+    <None Include="src\Shaders\shaderSingleColor.fs" />
   </ItemGroup>
 </Project>

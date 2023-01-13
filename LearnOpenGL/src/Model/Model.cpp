@@ -10,7 +10,8 @@ GLuint TextureFromAssImp(const aiTexture* aiTex, GLint wrapMode = GL_REPEAT, GLi
 
 void Model::Draw(Shader& shader)
 {
-	for (auto mesh : meshes)
+	shader.use();
+	for (auto& mesh : meshes)
 		mesh.Draw(shader);
 }
 
