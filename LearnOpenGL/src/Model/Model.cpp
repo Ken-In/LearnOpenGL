@@ -18,7 +18,7 @@ void Model::loadModel(std::string path)
 {
 	Assimp::Importer importer;
 	//将模型的图元变换为三角形 翻转y轴
-	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
@@ -155,6 +155,7 @@ unsigned int TextureFromFile(const char* path, const std::string& directory, GLi
 	glGenTextures(1, &textureID);
 
 	int width, height, nrComponents;
+	stbi_set_flip_vertically_on_load(true);
 	unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
 	if (data)
 	{
@@ -206,6 +207,7 @@ GLuint TextureFromAssImp(const aiTexture* aiTex, GLint wrapMode, GLint MagFilter
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, MagFilterMode);
 
 	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(true);
 	unsigned char* image_data = nullptr;
 	if (aiTex->mHeight == 0)
 	{

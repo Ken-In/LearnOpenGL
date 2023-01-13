@@ -52,5 +52,7 @@
     <None Include="src\Shaders\lightShader.fs" />
     <None Include="src\Shaders\model_loading.vs" />
     <None Include="src\Shaders\model_loading.fs" />
+    <None Include="src\Shaders\depthShader.vs" />
+    <None Include="src\Shaders\depthShader.fs" />
   </ItemGroup>
 </Project>

@@ -64,11 +64,15 @@ int main()
 	}
 
 	glEnable(GL_DEPTH_TEST);
+	//glDepthMask(GL_FALSE);//执行深度测试并丢弃片段，不更新深度缓冲
+	glDepthFunc(GL_LESS);//设置比较函数 默认GL_LESS
 
-	Shader modelShader("./src/shaders/model_loading.vs", "./src/shaders/model_loading.fs");
+	Shader ourShader("./src/shaders/depthShader.vs", "./src/shaders/depthShader.fs");
+	//Shader ourShader("./src/shaders/model_loading.vs", "./src/shaders/model_loading.fs");
 
+	//Model ourModel("./assets/models/rock/rock.obj");
+	//Model ourModel("./assets/models/backpack/backpack.obj");
 	Model ourModel("./assets/models/nanosuit/nanosuit.obj");
-	//Model ourModel("./assets/models/IronMan/IronMan.obj");
 	//Model ourModel("./assets/models/Ganyu/body.obj");
 
 	//循环渲染
@@ -87,19 +91,19 @@ int main()
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		modelShader.use();
+		ourShader.use();
 
 		//VP
 		glm::mat4 view = ourCamera.GetViewMatrix();
 		glm::mat4 projection = glm::perspective(glm::radians(ourCamera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-		modelShader.setMat4("view", view);
-		modelShader.setMat4("projection", projection);
+		ourShader.setMat4("view", view);
+		ourShader.setMat4("projection", projection);
 
 		glm::mat4 model(1.0f);
 		model *= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 		model *= glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, 0.1f));
-		modelShader.setMat4("model", model);
-		ourModel.Draw(modelShader);
+		ourShader.setMat4("model", model);
+		ourModel.Draw(ourShader);
 
 		//交换buffer
 		glfwSwapBuffers(window);
