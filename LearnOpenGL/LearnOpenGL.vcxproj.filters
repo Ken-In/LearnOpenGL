@@ -60,5 +60,7 @@
     <None Include="src\Shaders\shaderSingleColor.fs" />
     <None Include="src\Shaders\blendShader.vs" />
     <None Include="src\Shaders\blendShader.fs" />
+    <None Include="src\Shaders\frameBufferShader.vs" />
+    <None Include="src\Shaders\frameBufferShader.fs" />
   </ItemGroup>
 </Project>

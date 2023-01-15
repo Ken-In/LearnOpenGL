@@ -166,6 +166,8 @@
     <None Include="src\Shaders\blendShader.vs" />
     <None Include="src\Shaders\depthShader.fs" />
     <None Include="src\Shaders\depthShader.vs" />
+    <None Include="src\Shaders\frameBufferShader.fs" />
+    <None Include="src\Shaders\frameBufferShader.vs" />
     <None Include="src\Shaders\lightShader.fs" />
     <None Include="src\Shaders\lightShader.vs" />
     <None Include="src\Shaders\model_loading.fs" />
