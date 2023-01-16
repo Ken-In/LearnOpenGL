@@ -15,6 +15,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 GLFWwindow* InitialzeWindow();
 unsigned int loadTexture(const std::string& path);
+unsigned int loadCubeMapTexture(const std::vector<std::string>& textures_faces);
 void preVertexData();
 void initialVAO();
 void initialFrameBuffer();
@@ -38,15 +39,17 @@ bool firstMouse = true;
 //VAO VBO
 unsigned int transparentVAO, transparentVBO;
 unsigned int quadVAO, quadVBO;
+unsigned int skyboxVAO, skyboxVBO;
 
 //FrameBuffer
 unsigned int framebuffer;
 unsigned int texColorBuffer;
 unsigned int rbo;
 
-//加载texture
+//纹理
 unsigned int transparentTexture;
 unsigned int windowTexture;
+unsigned int cubemapTexture;
 
 //位移
 std::vector<glm::vec3> vegetation;
@@ -75,6 +78,70 @@ float quadVertices[] = {
 	 1.0f,  1.0f,  1.0f, 1.0f
 };
 
+float skyboxVertices[] = {
+	// positions          
+	-1.0f,  1.0f, -1.0f,
+	-1.0f, -1.0f, -1.0f,
+	 1.0f, -1.0f, -1.0f,
+	 1.0f, -1.0f, -1.0f,
+	 1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+
+	-1.0f, -1.0f,  1.0f,
+	-1.0f, -1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f,  1.0f,
+	-1.0f, -1.0f,  1.0f,
+
+	 1.0f, -1.0f, -1.0f,
+	 1.0f, -1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f, -1.0f,
+	 1.0f, -1.0f, -1.0f,
+
+	-1.0f, -1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f, -1.0f,  1.0f,
+	-1.0f, -1.0f,  1.0f,
+
+	-1.0f,  1.0f, -1.0f,
+	 1.0f,  1.0f, -1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
+	-1.0f,  1.0f, -1.0f,
+
+	-1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f,  1.0f,
+	 1.0f, -1.0f, -1.0f,
+	 1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f,  1.0f,
+	 1.0f, -1.0f,  1.0f
+};
+
+//cubemap paths
+std::vector<std::string> skyCubemap =
+{
+	"./assets/textures/skybox/right.jpg",
+	"./assets/textures/skybox/left.jpg",
+	"./assets/textures/skybox/top.jpg",
+	"./assets/textures/skybox/bottom.jpg",
+	"./assets/textures/skybox/front.jpg",
+	"./assets/textures/skybox/back.jpg"
+};
+std::vector<std::string> otherCubemap =
+{
+	"./assets/textures/cubemaps/skyBox6/posx.jpg",
+	"./assets/textures/cubemaps/skyBox6/negx.jpg",
+	"./assets/textures/cubemaps/skyBox6/posy.jpg",
+	"./assets/textures/cubemaps/skyBox6/negy.jpg",
+	"./assets/textures/cubemaps/skyBox6/posz.jpg",
+	"./assets/textures/cubemaps/skyBox6/negz.jpg",
+};
 
 int main()
 {
@@ -88,19 +155,22 @@ int main()
 
 	//创建Shader
 	//Shader ourShader("./src/shaders/depthShader.vs", "./src/shaders/depthShader.fs");
-	Shader ourShader("./src/Shaders/model_loading.vs", "./src/Shaders/model_loading.fs");
+	Shader ourShader("./src/Shaders/reflectionShader.vs", "./src/Shaders/reflectionShader.fs");
 	Shader shaderSingleColor("./src/Shaders/shaderSingleColor.vs", "./src/Shaders/shaderSingleColor.fs");
 	Shader blendShader("./src/Shaders/blendShader.vs", "./src/Shaders/blendShader.fs");
 	Shader frameBufferShader("./src/Shaders/frameBufferShader.vs", "./src/Shaders/frameBufferShader.fs");
+	Shader skyboxShader("./src/Shaders/cubeMapShader.vs", "./src/Shaders/cubeMapShader.fs");
 
 	//创建Model
 	//Model ourModel("./assets/models/rock/rock.obj");
 	//Model ourModel("./assets/models/backpack/backpack.obj");
-	Model ourModel("./assets/models/nanosuit/nanosuit.obj");
+	Model ourModel("./assets/models/nanosuit_reflection/nanosuit.obj");
 	//Model ourModel("./assets/models/Ganyu/body.obj");
 
 	transparentTexture = loadTexture("./assets/textures/grass.png");
 	windowTexture = loadTexture("./assets/textures/window.png");
+	cubemapTexture = loadCubeMapTexture(skyCubemap);
+	//cubemapTexture = loadCubeMapTexture(otherCubemap);
 
 	//循环渲染
 	//每次循环检查窗口是否退出
@@ -117,6 +187,7 @@ int main()
 		//渲染指令
 		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
 		//glDepthMask(GL_FALSE);//执行深度测试并丢弃片段，不更新深度缓冲
 		//glDepthFunc(GL_LESS);//设置比较函数 默认GL_LESS
 		glEnable(GL_CULL_FACE);
@@ -125,22 +196,50 @@ int main()
 		glClearColor(.1f, .1f, .1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		ourShader.use();
-
 		//MVP
 		glm::mat4 model(1.0f);
 		glm::mat4 view = ourCamera.GetViewMatrix();
 		glm::mat4 projection = glm::perspective(glm::radians(ourCamera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
+		//-------------------------------------------------------------
+		// model ------------------------------------------------------
+		//-------------------------------------------------------------
+		ourShader.use();
 		ourShader.setMat4("view", view);
 		ourShader.setMat4("projection", projection);
-		
+		ourShader.setVec3("cameraPos", ourCamera.Position);
+		glActiveTexture(GL_TEXTURE5);
+		ourShader.setInt("cubemap", 5);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+
 		model *= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 		model *= glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, 0.1f));
 		ourShader.setMat4("model", model);
 
 		ourModel.Draw(ourShader);
 
-		//alpha
+		//-------------------------------------------------------------
+		// skyBox -----------------------------------------------------
+		//-------------------------------------------------------------
+		//渲染天空盒 不写入深度
+		glDepthMask(GL_FALSE);
+		skyboxShader.use();
+		view = glm::mat4(glm::mat3(ourCamera.GetViewMatrix()));
+		skyboxShader.setMat4("view", view);
+		skyboxShader.setMat4("projection", projection);
+		view = ourCamera.GetViewMatrix();
+
+		glBindVertexArray(skyboxVAO);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glDepthMask(GL_TRUE);
+
+		//-------------------------------------------------------------
+		// blending ---------------------------------------------------
+		//-------------------------------------------------------------
+		//sorted
+		
+		glDisable(GL_CULL_FACE);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		blendShader.use();
@@ -156,6 +255,9 @@ int main()
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
 
+		//-------------------------------------------------------------
+		// 后处理 -----------------------------------------------------
+		//-------------------------------------------------------------
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDisable(GL_DEPTH_TEST);
 
@@ -186,12 +288,12 @@ int main()
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	if (firstMouse) // 这个bool变量初始时是设定为true的
-	{		
+	{
 		lastX = xpos;
 		lastY = ypos;
 		firstMouse = false;
 	}
-	
+
 	float xOffset = xpos - lastX;
 	float yOffset = lastY - ypos;
 
@@ -228,6 +330,41 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	// make sure the viewport matches the new window dimensions; note that width and 
 	// height will be significantly larger than specified on retina displays.
 	glViewport(0, 0, width, height);
+}
+
+GLFWwindow* InitialzeWindow()
+{
+	//初始化glfw
+	glfwInit();
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+	//创建窗口
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+	if (window == NULL)
+	{
+		std::cout << "Failed to create GLFW window" << std::endl;
+		glfwTerminate();
+		return nullptr;
+	}
+	glfwMakeContextCurrent(window);
+	//设置回调函数
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	//隐藏光标
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	//注册了鼠标函数
+	glfwSetCursorPosCallback(window, mouse_callback);
+	//滚轮回调函数
+	glfwSetScrollCallback(window, scroll_callback);
+
+	//初始化glad
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::cout << "Failed to initialize GLAD" << std::endl;
+		return nullptr;
+	}
+	return window;
 }
 
 unsigned int loadTexture(const std::string& path)
@@ -273,39 +410,40 @@ unsigned int loadTexture(const std::string& path)
 	return textureID;
 }
 
-GLFWwindow* InitialzeWindow()
+unsigned int loadCubeMapTexture(const std::vector<std::string>& texture_faces)
 {
-	//初始化glfw
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
-	//创建窗口
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-	if (window == NULL)
+	int width, height, nrChannels;
+	unsigned char* data;
+	for (unsigned int i = 0; i < texture_faces.size(); i++)
 	{
-		std::cout << "Failed to create GLFW window" << std::endl;
-		glfwTerminate();
-		return nullptr;
-	}
-	glfwMakeContextCurrent(window);
-	//设置回调函数
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	//隐藏光标
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	//注册了鼠标函数
-	glfwSetCursorPosCallback(window, mouse_callback);
-	//滚轮回调函数
-	glfwSetScrollCallback(window, scroll_callback);
+		data = stbi_load(texture_faces[i].c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+		{
+			glTexImage2D(
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+				0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+			stbi_image_free(data);
+		}
+		else
+		{
+			std::cout << "Cubemap texture failed to load at path: " << texture_faces[i] << std::endl;
+			stbi_image_free(data);
+		}
 
-	//初始化glad
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
-		std::cout << "Failed to initialize GLAD" << std::endl;
-		return nullptr;
 	}
-	return window;
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	glBindTexture(1, 0);
+	return textureID;
 }
 
 void preVertexData()
@@ -350,6 +488,16 @@ void initialVAO()
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	glBindVertexArray(0);
+
+	//天空盒VAO
+	glGenVertexArrays(1, &skyboxVAO);
+	glGenBuffers(1, &skyboxVBO);
+	glBindVertexArray(skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glBindVertexArray(0);
 }
 
