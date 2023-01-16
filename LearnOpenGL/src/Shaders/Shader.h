@@ -141,4 +141,9 @@ public:
 	{
 		return glGetUniformLocation(ID, name.c_str());
 	}
+
+	GLint GetUniformBlockIndex(const std::string& name) const
+	{
+		return glGetUniformBlockIndex(ID, name.c_str());
+	}
 };

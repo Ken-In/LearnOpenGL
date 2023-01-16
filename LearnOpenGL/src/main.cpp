@@ -46,6 +46,9 @@ unsigned int framebuffer;
 unsigned int texColorBuffer;
 unsigned int rbo;
 
+//uniform buffer
+unsigned int uboMatrices;
+
 //纹理
 unsigned int transparentTexture;
 unsigned int windowTexture;
@@ -161,6 +164,17 @@ int main()
 	Shader frameBufferShader("./src/Shaders/frameBufferShader.vs", "./src/Shaders/frameBufferShader.fs");
 	Shader skyboxShader("./src/Shaders/cubeMapShader.vs", "./src/Shaders/cubeMapShader.fs");
 
+	//unifrom buffer shader绑定
+	//只在ourshader里使用了uniform buffer
+	unsigned int uniformBlockIndexModel = ourShader.GetUniformBlockIndex("Matrices");
+	glUniformBlockBinding(ourShader.ID, uniformBlockIndexModel, 0);
+
+	//填充ubo
+	glm::mat4 projection = glm::perspective(glm::radians(ourCamera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	
 	//创建Model
 	//Model ourModel("./assets/models/rock/rock.obj");
 	//Model ourModel("./assets/models/backpack/backpack.obj");
@@ -191,27 +205,31 @@ int main()
 		//glDepthMask(GL_FALSE);//执行深度测试并丢弃片段，不更新深度缓冲
 		//glDepthFunc(GL_LESS);//设置比较函数 默认GL_LESS
 		glEnable(GL_CULL_FACE);
-		//glFrontFace(GL_CW);//将顺时针的面定义为正向面：
+		//glFrontFace(GL_CW);//将顺时针的面定义为正向面
+		glEnable(GL_PROGRAM_POINT_SIZE);//shader可以改变点pointsize
 
 		glClearColor(.1f, .1f, .1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//MVP
-		glm::mat4 model(1.0f);
+		//VP
 		glm::mat4 view = ourCamera.GetViewMatrix();
+		glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 		glm::mat4 projection = glm::perspective(glm::radians(ourCamera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
 		//-------------------------------------------------------------
 		// model ------------------------------------------------------
 		//-------------------------------------------------------------
 		ourShader.use();
-		ourShader.setMat4("view", view);
-		ourShader.setMat4("projection", projection);
+// 		ourShader.setMat4("view", view);
+// 		ourShader.setMat4("projection", projection);
 		ourShader.setVec3("cameraPos", ourCamera.Position);
 		glActiveTexture(GL_TEXTURE5);
 		ourShader.setInt("cubemap", 5);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
+		glm::mat4 model(1.0f);
 		model *= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 		model *= glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, 0.1f));
 		ourShader.setMat4("model", model);
@@ -499,6 +517,14 @@ void initialVAO()
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glBindVertexArray(0);
+
+	//uniform buffer
+	glGenBuffers(1, &uboMatrices);
+	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);//分配内存
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	//将ubo绑定到绑定点
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 2 * sizeof(glm::mat4));
 }
 
 void initialFrameBuffer()
