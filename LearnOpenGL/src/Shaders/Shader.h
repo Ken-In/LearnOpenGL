@@ -150,6 +150,12 @@ public:
 		glUniform3f(locationID, v0, v1, v2);
 	}
 
+	void setVec2(const std::string& name, glm::vec2 value) const
+	{
+		unsigned int locationID = this->getUniform(name);
+		glUniform2f(locationID, value.x, value.y);
+	}
+
 	void setVec3(const std::string& name, glm::vec3 value) const
 	{
 		unsigned int locationID = this->getUniform(name);

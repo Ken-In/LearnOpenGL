@@ -73,5 +73,11 @@
     <None Include="src\Shaders\normalDisplayShader.vs" />
     <None Include="src\Shaders\normalDisplayShader.gs" />
     <None Include="src\Shaders\normalDisplayShader.fs" />
+    <None Include="src\Shaders\screenQuadShader.vs" />
+    <None Include="src\Shaders\screenQuadShader.fs" />
+    <None Include="src\Shaders\rockInstanceShader.vs" />
+    <None Include="src\Shaders\rockInstanceShader.fs" />
+    <None Include="src\Shaders\planetShader.vs" />
+    <None Include="src\Shaders\planetShader.fs" />
   </ItemGroup>
 </Project>
