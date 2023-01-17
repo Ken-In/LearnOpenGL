@@ -40,6 +40,7 @@ bool firstMouse = true;
 unsigned int transparentVAO, transparentVBO;
 unsigned int quadVAO, quadVBO;
 unsigned int skyboxVAO, skyboxVBO;
+unsigned int geometryVAO, geometryVBO;
 
 //FrameBuffer
 unsigned int framebuffer;
@@ -126,6 +127,13 @@ float skyboxVertices[] = {
 	 1.0f, -1.0f,  1.0f
 };
 
+float points[] = {
+	-0.5f,  0.5f, 1.0f, 0.0f, 0.0f, // 左上
+	 0.5f,  0.5f, 0.0f, 1.0f, 0.0f, // 右上
+	 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // 右下
+	-0.5f, -0.5f, 1.0f, 1.0f, 0.0f  // 左下
+};
+
 //cubemap paths
 std::vector<std::string> skyCubemap =
 {
@@ -157,19 +165,21 @@ int main()
 	initialFrameBuffer();
 
 	//创建Shader
-	//Shader ourShader("./src/shaders/depthShader.vs", "./src/shaders/depthShader.fs");
-	Shader ourShader("./src/Shaders/reflectionShader.vs", "./src/Shaders/reflectionShader.fs");
+	//Shader modelShader("./src/shaders/depthShader.vs", "./src/shaders/depthShader.fs");
+	Shader modelShader("./src/Shaders/reflectionShader.vs", "./src/Shaders/reflectionShader.fs", "./src/Shaders/reflectionShader.gs");
 	Shader shaderSingleColor("./src/Shaders/shaderSingleColor.vs", "./src/Shaders/shaderSingleColor.fs");
 	Shader blendShader("./src/Shaders/blendShader.vs", "./src/Shaders/blendShader.fs");
 	Shader frameBufferShader("./src/Shaders/frameBufferShader.vs", "./src/Shaders/frameBufferShader.fs");
 	Shader skyboxShader("./src/Shaders/cubeMapShader.vs", "./src/Shaders/cubeMapShader.fs");
+	Shader geometryShader("./src/Shaders/geometryShader.vs", "./src/Shaders/geometryShader.fs", "./src/Shaders/geometryShader.gs");
+	Shader normalDisplayShader("./src/Shaders/normalDisplayShader.vs", "./src/Shaders/normalDisplayShader.fs", "./src/Shaders/normalDisplayShader.gs");
 
 	//unifrom buffer shader绑定
 	//只在ourshader里使用了uniform buffer
-	unsigned int uniformBlockIndexModel = ourShader.GetUniformBlockIndex("Matrices");
-	glUniformBlockBinding(ourShader.ID, uniformBlockIndexModel, 0);
+	unsigned int uniformBlockIndexModel = modelShader.GetUniformBlockIndex("Matrices");
+	glUniformBlockBinding(modelShader.ID, uniformBlockIndexModel, 0);
 
-	//填充ubo
+	//填充ubo projection
 	glm::mat4 projection = glm::perspective(glm::radians(ourCamera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
@@ -181,10 +191,11 @@ int main()
 	Model ourModel("./assets/models/nanosuit_reflection/nanosuit.obj");
 	//Model ourModel("./assets/models/Ganyu/body.obj");
 
+	//加载纹理
 	transparentTexture = loadTexture("./assets/textures/grass.png");
 	windowTexture = loadTexture("./assets/textures/window.png");
 	cubemapTexture = loadCubeMapTexture(skyCubemap);
-	//cubemapTexture = loadCubeMapTexture(otherCubemap);
+	//cubemapTexture = loadCubeMapTexture(otherCubemap); //其他天空盒贴图
 
 	//循环渲染
 	//每次循环检查窗口是否退出
@@ -199,7 +210,7 @@ int main()
 		lastTime = currentFrame;
 
 		//渲染指令
-		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);//渲染到自定义的帧缓冲
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
 		//glDepthMask(GL_FALSE);//执行深度测试并丢弃片段，不更新深度缓冲
@@ -211,30 +222,38 @@ int main()
 		glClearColor(.1f, .1f, .1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//VP
+		//View
 		glm::mat4 view = ourCamera.GetViewMatrix();
 		glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
 		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-		glm::mat4 projection = glm::perspective(glm::radians(ourCamera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
 		//-------------------------------------------------------------
 		// model ------------------------------------------------------
 		//-------------------------------------------------------------
-		ourShader.use();
-// 		ourShader.setMat4("view", view);
-// 		ourShader.setMat4("projection", projection);
-		ourShader.setVec3("cameraPos", ourCamera.Position);
+		modelShader.use();
+		modelShader.setVec3("cameraPos", ourCamera.Position);
+		modelShader.setFloat("time", glfwGetTime());
 		glActiveTexture(GL_TEXTURE5);
-		ourShader.setInt("cubemap", 5);
+		modelShader.setInt("cubemap", 5);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
 		glm::mat4 model(1.0f);
 		model *= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 		model *= glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, 0.1f));
-		ourShader.setMat4("model", model);
+		modelShader.setMat4("model", model);
 
-		ourModel.Draw(ourShader);
+		ourModel.Draw(modelShader);
+
+		//-------------------------------------------------------------
+		// normalDisplay ----------------------------------------------
+		//-------------------------------------------------------------
+		normalDisplayShader.use();
+		normalDisplayShader.setMat4("model", model);
+		normalDisplayShader.setMat4("view", view);
+		normalDisplayShader.setMat4("projection", projection);
+		ourModel.Draw(normalDisplayShader);
+
 
 		//-------------------------------------------------------------
 		// skyBox -----------------------------------------------------
@@ -244,20 +263,19 @@ int main()
 		skyboxShader.use();
 		view = glm::mat4(glm::mat3(ourCamera.GetViewMatrix()));
 		skyboxShader.setMat4("view", view);
-		skyboxShader.setMat4("projection", projection);
 		view = ourCamera.GetViewMatrix();
+		skyboxShader.setMat4("projection", projection);
 
 		glBindVertexArray(skyboxVAO);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glDepthMask(GL_TRUE);
 
+		
+
 		//-------------------------------------------------------------
 		// blending ---------------------------------------------------
 		//-------------------------------------------------------------
-		//sorted
-		
-		glDisable(GL_CULL_FACE);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		blendShader.use();
@@ -272,6 +290,13 @@ int main()
 			blendShader.setMat4("model", model);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
+
+		//-------------------------------------------------------------
+		// geometry example -------------------------------------------
+		//-------------------------------------------------------------
+// 		geometryShader.use();
+// 		glBindVertexArray(geometryVAO);
+// 		glDrawArrays(GL_POINTS, 0, 4);
 
 		//-------------------------------------------------------------
 		// 后处理 -----------------------------------------------------
@@ -516,6 +541,18 @@ void initialVAO()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glBindVertexArray(0);
+
+	//geometryVAO
+	glGenVertexArrays(1, &geometryVAO);
+	glGenBuffers(1, &geometryVBO);
+	glBindVertexArray(geometryVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, geometryVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(points), &points, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
 	glBindVertexArray(0);
 
 	//uniform buffer

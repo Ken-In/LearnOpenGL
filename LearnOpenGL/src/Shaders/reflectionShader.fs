@@ -1,16 +1,9 @@
 #version 330 core
 out vec4 FragColor;
 
-in vec2 Texcoords;
+in vec2 TexCoords;
 in vec3 Normal;
 in vec3 Position;
-
-in VS_OUT
-{
-	vec2 Texcoords;
-	vec3 Normal;
-	vec3 Position;
-} fs_in;
 
 uniform vec3 cameraPos;
 uniform sampler2D texture_diffuse1;
@@ -27,10 +20,10 @@ vec3 lightPos = vec3(-1, 1, -1);
 
 void main()
 {    
-    vec3 normal = normalize(fs_in.Normal);
-    vec3 baseColor = texture(texture_diffuse1, fs_in.Texcoords).rgb;
-    vec3 lightDir = normalize(lightPos - fs_in.Position);
-    vec3 viewDir = normalize(cameraPos - fs_in.Position);
+    vec3 normal = normalize(Normal);
+    vec3 baseColor = texture(texture_diffuse1, TexCoords).rgb;
+    vec3 lightDir = normalize(lightPos - Position);
+    vec3 viewDir = normalize(cameraPos - Position);
 
     vec3 ambient = ambientFactor * baseColor;
 
@@ -44,7 +37,7 @@ void main()
     vec3 I = normalize(Position - cameraPos);
     vec3 R = reflect(I, normal);
     //vec3 R = refract(I, normal, ratio);
-    vec3 reflectFactor = vec3(texture(texture_reflect1, fs_in.Texcoords));
+    vec3 reflectFactor = vec3(texture(texture_reflect1, TexCoords));
     vec3 reflect = 2 * reflectFactor * texture(cubemap, R).rgb;
 
     FragColor = vec4(ambient + diffuse + specular + reflect, 1.0);

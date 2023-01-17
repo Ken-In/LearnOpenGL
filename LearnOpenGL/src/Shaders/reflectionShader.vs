@@ -5,11 +5,10 @@ layout (location = 2) in vec2 aTexcoords;
 
 out VS_OUT
 {
-	vec2 Texcoords;
+	vec2 TexCoords;
 	vec3 Normal;
 	vec3 Position;
 } vs_out;
-
 
 layout (std140) uniform Matrices
 {
@@ -21,7 +20,7 @@ uniform mat4 model;
 
 void main()
 {
-	vs_out.Texcoords = aTexcoords;
+	vs_out.TexCoords = aTexcoords;
 	vs_out.Normal = mat3(transpose(inverse(model))) * aNormal;
 	vs_out.Position = vec3(model * vec4(aPos, 1.0f));
 	gl_Position = projection * view * model * vec4(aPos, 1.0f);
