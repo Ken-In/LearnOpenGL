@@ -25,8 +25,12 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 //Camera
-Camera ourCamera(glm::vec3(-10.0f, 5.0f, 60.0f));
+Camera ourCamera(glm::vec3(0.0f, 0.0f, 3.0f));
 
+//light
+glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
+bool blinn = false;
+bool blinnKeyPressed = false;
 //timer
 float deltaTime = 0.0f;
 float lastTime = 0.0f;
@@ -43,6 +47,7 @@ unsigned int skyboxVAO, skyboxVBO;
 unsigned int geometryVAO, geometryVBO;
 unsigned int screenQuadVAO, screenQuadVBO;
 unsigned int instanceVBO;
+unsigned int planeVAO, planeVBO;
 
 //FrameBuffer
 unsigned int framebuffer;
@@ -56,6 +61,7 @@ unsigned int uboMatrices;
 unsigned int transparentTexture;
 unsigned int windowTexture;
 unsigned int cubemapTexture;
+unsigned int planeTexture;
 
 //位移
 std::vector<glm::vec3> vegetation;
@@ -136,6 +142,16 @@ float points[] = {
 	-0.5f, -0.5f, 1.0f, 1.0f, 0.0f  // 左下
 };
 
+float planeVertices[] = {
+	// positions            // normals         // texcoords
+	 10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+	-10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+	-10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+
+	 10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+	-10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+	 10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f
+};
 
 float screenQuadVertices[] = {
 	// 位置          // 颜色
@@ -195,21 +211,8 @@ int main()
 	Shader screenQuadShader("./src/Shaders/screenQuadShader.vs", "./src/Shaders/screenQuadShader.fs");
 	Shader rockInstanceShader("./src/Shaders/rockInstanceShader.vs", "./src/Shaders/rockInstanceShader.fs");
 	Shader planetShader("./src/Shaders/planetShader.vs", "./src/Shaders/planetShader.fs");
+	Shader blinnPhongShader("./src/Shaders/blinnPhongShader.vs", "./src/Shaders/blinnPhongShader.fs");
 
-	//unifrom buffer shader绑定
-	//只在ourshader里使用了uniform buffer
-	unsigned int uniformBlockIndexModel = modelShader.GetUniformBlockIndex("Matrices");
-	unsigned int uniformBlockIndexRock = rockInstanceShader.GetUniformBlockIndex("Matrices");
-
-	glUniformBlockBinding(modelShader.ID, uniformBlockIndexModel, 0);
-	glUniformBlockBinding(rockInstanceShader.ID, uniformBlockIndexRock, 0);
-
-	//填充ubo projection
-	glm::mat4 projection = glm::perspective(glm::radians(ourCamera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 150.0f);
-	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	
 	//创建Model
 	//Model ourModel("./assets/models/rock/rock.obj");
 	//Model ourModel("./assets/models/backpack/backpack.obj");
@@ -218,12 +221,53 @@ int main()
 	Model planetModel("./assets/models/planet/planet.obj");
 	Model rockModel("./assets/models/rock/rock.obj");
 
-
 	//加载纹理
 	transparentTexture = loadTexture("./assets/textures/grass.png");
 	windowTexture = loadTexture("./assets/textures/window.png");
 	cubemapTexture = loadCubeMapTexture(skyCubemap);
 	//cubemapTexture = loadCubeMapTexture(otherCubemap); //其他天空盒贴图
+	planeTexture = loadTexture("./assets/textures/wood.png");
+
+	//unifrom buffer shader绑定
+	//只在modelShader里使用了uniform buffer
+	unsigned int uniformBlockIndexModel = modelShader.GetUniformBlockIndex("Matrices");
+	glUniformBlockBinding(modelShader.ID, uniformBlockIndexModel, 0);
+
+	//填充ubo projection
+	glm::mat4 projection = glm::perspective(glm::radians(ourCamera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 150.0f);
+	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+
+	//rockVAO
+// 	unsigned int buffer;//model buffer
+// 	glGenBuffers(1, &buffer);
+// 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
+// 	glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
+// 
+// 	for (unsigned int i = 0; i < rockModel.meshes.size(); i++)
+// 	{
+// 		unsigned int VAO = rockModel.meshes[i].VAO;
+// 		glBindVertexArray(VAO);
+// 		//顶点属性
+// 		GLsizei vec4Size = sizeof(glm::vec4);
+// 		glEnableVertexAttribArray(3);
+// 		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+// 		glEnableVertexAttribArray(4);
+// 		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
+// 		glEnableVertexAttribArray(5);
+// 		glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+// 		glEnableVertexAttribArray(6);
+// 		glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+// 
+// 		glVertexAttribDivisor(3, 1);
+// 		glVertexAttribDivisor(4, 1);
+// 		glVertexAttribDivisor(5, 1);
+// 		glVertexAttribDivisor(6, 1);
+// 
+// 		glBindVertexArray(0);
+// 	}
 
 	//循环渲染
 	//每次循环检查窗口是否退出
@@ -240,25 +284,27 @@ int main()
 		//渲染指令
 		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);//渲染到自定义的帧缓冲
 		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LEQUAL);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDepthFunc(GL_LEQUAL);//设置比较函数 默认GL_LESS
 		//glDepthMask(GL_FALSE);//执行深度测试并丢弃片段，不更新深度缓冲
-		//glDepthFunc(GL_LESS);//设置比较函数 默认GL_LESS
 		//glEnable(GL_CULL_FACE);
 		//glFrontFace(GL_CW);//将顺时针的面定义为正向面
-		glEnable(GL_PROGRAM_POINT_SIZE);//shader可以改变点pointsize
+		//glEnable(GL_PROGRAM_POINT_SIZE);//shader可以改变点pointsize
 
 		glClearColor(.1f, .1f, .1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//View
 		glm::mat4 view = ourCamera.GetViewMatrix();
-		glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+		glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);//填入uniform buffer
 		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 		//-------------------------------------------------------------
 		// model ------------------------------------------------------
 		//-------------------------------------------------------------
+
 // 		modelShader.use();
 // 		modelShader.setVec3("cameraPos", ourCamera.Position);
 // 		modelShader.setFloat("time", glfwGetTime());
@@ -276,6 +322,7 @@ int main()
 		//-------------------------------------------------------------
 		// normalDisplay ----------------------------------------------
 		//-------------------------------------------------------------
+		
 // 		normalDisplayShader.use();
 // 		normalDisplayShader.setMat4("model", model);
 // 		normalDisplayShader.setMat4("view", view);
@@ -285,58 +332,52 @@ int main()
 		//-------------------------------------------------------------
 		// rockInstance -----------------------------------------------
 		//-------------------------------------------------------------
+		
 		//绘制行星
-		planetShader.use();
-		planetShader.setMat4("projection", projection);
-		planetShader.setMat4("view", view);
-		glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -3.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(4.0f, 4.0f, 4.0f));
-		planetShader.setMat4("model", model);
-		planetModel.Draw(planetShader);
+// 		planetShader.use();
+// 		planetShader.setMat4("projection", projection);
+// 		planetShader.setMat4("view", view);
+// 		glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -3.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(4.0f, 4.0f, 4.0f));
+// 		planetShader.setMat4("model", model);
+// 		planetModel.Draw(planetShader);
+// 
+// 		rockInstanceShader.use();
+// 		rockInstanceShader.setMat4("projection", projection);
+// 		rockInstanceShader.setMat4("view", view);
+// 
+// 		//绘制行星环
+// 		for (unsigned int i = 0; i < rockModel.meshes.size(); i++)
+// 		{
+// 			glBindVertexArray(rockModel.meshes[i].VAO);
+// 			glDrawElementsInstanced(
+// 				GL_TRIANGLES, rockModel.meshes[i].m_Indices.size(), GL_UNSIGNED_INT, 0, amount
+// 			);
+// 		}
 
-		rockInstanceShader.use();
-		rockInstanceShader.setMat4("projection", projection);
-		rockInstanceShader.setMat4("view", view);
-		//rockVAO
-		// 顶点缓冲对象
-		unsigned int buffer;
-		glGenBuffers(1, &buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, buffer);
-		glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
+		//-------------------------------------------------------------
+		// blinn-phong plane ------------------------------------------
+		//-------------------------------------------------------------
 
-		for (unsigned int i = 0; i < rockModel.meshes.size(); i++)
-		{
-			unsigned int VAO = rockModel.meshes[i].VAO;
-			glBindVertexArray(VAO);
-			//顶点属性
-			GLsizei vec4Size = sizeof(glm::vec4);
-			glEnableVertexAttribArray(3);
-			glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
-			glEnableVertexAttribArray(4);
-			glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
-			glEnableVertexAttribArray(5);
-			glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
-			glEnableVertexAttribArray(6);
-			glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+		blinnPhongShader.use();
+		blinnPhongShader.setMat4("projection", projection);
+		blinnPhongShader.setMat4("view", view);
 
-			glVertexAttribDivisor(3, 1);
-			glVertexAttribDivisor(4, 1);
-			glVertexAttribDivisor(5, 1);
-			glVertexAttribDivisor(6, 1);
+		blinnPhongShader.setVec3("lightPos", lightPos);
+		blinnPhongShader.setVec3("viewPos", ourCamera.Position);
+		blinnPhongShader.setInt("blinn", blinn);
+		blinnPhongShader.setInt("floorTexture", 0);
 
-			glBindVertexArray(0);
-		}
+		glBindVertexArray(planeVAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, planeTexture);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		//绘制行星环
-		for (unsigned int i = 0; i < rockModel.meshes.size(); i++)
-		{
-			glBindVertexArray(rockModel.meshes[i].VAO);
-			glDrawElementsInstanced(
-				GL_TRIANGLES, rockModel.meshes[i].m_Indices.size(), GL_UNSIGNED_INT, 0, amount
-			);
-		}
+		std::cout << (blinn ? "Blinn-Phong" : "Phong") << std::endl;
+
 		//-------------------------------------------------------------
 		// skyBox -----------------------------------------------------
 		//-------------------------------------------------------------
+		
 		//渲染天空盒 不写入深度
 // 		glDepthMask(GL_FALSE);
 // 		skyboxShader.use();
@@ -353,8 +394,7 @@ int main()
 		//-------------------------------------------------------------
 		// blending ---------------------------------------------------
 		//-------------------------------------------------------------
-// 		glEnable(GL_BLEND);
-// 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		
 // 		blendShader.use();
 // 		blendShader.setMat4("view", view);
 // 		blendShader.setMat4("projection", projection);
@@ -371,6 +411,7 @@ int main()
 		//-------------------------------------------------------------
 		// geometry example -------------------------------------------
 		//-------------------------------------------------------------
+		
 // 		geometryShader.use();
 // 		glBindVertexArray(geometryVAO);
 // 		glDrawArrays(GL_POINTS, 0, 4);
@@ -378,6 +419,7 @@ int main()
 		//-------------------------------------------------------------
 		// instance ---------------------------------------------------
 		//-------------------------------------------------------------
+		
 // 		screenQuadShader.use();
 // 		glBindVertexArray(screenQuadVAO);
 // 		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
@@ -385,6 +427,7 @@ int main()
 		//-------------------------------------------------------------
 		// 后处理 -----------------------------------------------------
 		//-------------------------------------------------------------
+
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDisable(GL_DEPTH_TEST);
 
@@ -409,6 +452,7 @@ int main()
 	glfwTerminate();
 	glDeleteFramebuffers(1, &framebuffer);
 
+	glfwTerminate();
 	return 0;
 }
 
@@ -449,6 +493,16 @@ void processInput(GLFWwindow* window)
 		ourCamera.ProcessKeyboard(Camera_Movement::LEFT, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		ourCamera.ProcessKeyboard(Camera_Movement::RIGHT, deltaTime);
+
+	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !blinnKeyPressed)
+	{
+		blinn = !blinn;
+		blinnKeyPressed = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE)
+	{
+		blinnKeyPressed = false;
+	}
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -703,6 +757,21 @@ void initialVAO()
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glVertexAttribDivisor(2, 1);//处于位置值2的顶点属性渲染1个新实例更新
+	glBindVertexArray(0);
+
+	//plane
+	glGenVertexArrays(1, &planeVAO);
+	glGenBuffers(1, &planeVBO);
+	glBindVertexArray(planeVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
 	//uniform buffer

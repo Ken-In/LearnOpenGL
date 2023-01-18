@@ -79,5 +79,7 @@
     <None Include="src\Shaders\rockInstanceShader.fs" />
     <None Include="src\Shaders\planetShader.vs" />
     <None Include="src\Shaders\planetShader.fs" />
+    <None Include="src\Shaders\blinnPhongShader.vs" />
+    <None Include="src\Shaders\blinnPhongShader.fs" />
   </ItemGroup>
 </Project>
