@@ -7,6 +7,8 @@ uniform sampler2D screenTexture;
 
 const float offset = 1.0 / 300.0;
 
+const float gamma = 2.2;
+
 void main()
 { 
     vec2 offsets[9] = vec2[](
@@ -27,15 +29,16 @@ void main()
         1,  1, 1
     );
 
-    vec3 sampleTex[9];
-    for(int i = 0; i < 9; i++)
-    {
-        sampleTex[i] = texture(screenTexture, TexCoords.st + offsets[i]).rgb;
-    }
-    vec3 col = vec3(0.0);
-    for(int i = 0; i < 9; i++)
-        col += sampleTex[i] * kernel[i];
+    //vec3 sampleTex[9];
+    //for(int i = 0; i < 9; i++)
+    //{
+    //    sampleTex[i] = texture(screenTexture, TexCoords.st + offsets[i]).rgb;
+    //}
+    //vec3 col = vec3(0.0);
+    //for(int i = 0; i < 9; i++)
+    //    col += sampleTex[i] * kernel[i];
 
     //FragColor = vec4(col, 1.0f);
     FragColor = vec4(texture(screenTexture, TexCoords).rgb, 1.0);
+    FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));//gamma½ÃÕý
 }

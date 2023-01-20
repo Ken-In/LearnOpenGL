@@ -12,6 +12,8 @@ uniform vec3 lightPos;
 uniform vec3 viewPos;
 uniform bool blinn;
 
+float gamma = 2.2;
+
 void main()
 {           
     vec3 color = texture(floorTexture, fs_in.TexCoords).rgb;

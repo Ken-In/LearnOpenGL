@@ -81,5 +81,11 @@
     <None Include="src\Shaders\planetShader.fs" />
     <None Include="src\Shaders\blinnPhongShader.vs" />
     <None Include="src\Shaders\blinnPhongShader.fs" />
+    <None Include="src\Shaders\simpleDepthShader.vs" />
+    <None Include="src\Shaders\simpleDepthShader.fs" />
+    <None Include="src\Shaders\debugDepthQuad.vs" />
+    <None Include="src\Shaders\debugDepthQuad.fs" />
+    <None Include="src\Shaders\shadowShader.vs" />
+    <None Include="src\Shaders\shadowShader.fs" />
   </ItemGroup>
 </Project>
