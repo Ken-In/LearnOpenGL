@@ -182,8 +182,12 @@
     <None Include="src\Shaders\normalDisplayShader.fs" />
     <None Include="src\Shaders\normalDisplayShader.gs" />
     <None Include="src\Shaders\normalDisplayShader.vs" />
+    <None Include="src\Shaders\normalMapShader.fs" />
+    <None Include="src\Shaders\normalMapShader.vs" />
     <None Include="src\Shaders\planetShader.fs" />
     <None Include="src\Shaders\planetShader.vs" />
+    <None Include="src\Shaders\pointLightShader.fs" />
+    <None Include="src\Shaders\pointLightShader.vs" />
     <None Include="src\Shaders\reflectionShader.fs" />
     <None Include="src\Shaders\reflectionShader.gs" />
     <None Include="src\Shaders\reflectionShader.vs" />
@@ -197,6 +201,9 @@
     <None Include="src\Shaders\shaderSingleColor.vs" />
     <None Include="src\Shaders\debugDepthQuad.fs" />
     <None Include="src\Shaders\debugDepthQuad.vs" />
+    <None Include="src\Shaders\shadowCubemapShader.fs" />
+    <None Include="src\Shaders\shadowCubemapShader.gs" />
+    <None Include="src\Shaders\shadowCubemapShader.vs" />
     <None Include="src\Shaders\shadowShader.fs" />
     <None Include="src\Shaders\shadowShader.vs" />
     <None Include="src\Shaders\simpleDepthShader.fs" />

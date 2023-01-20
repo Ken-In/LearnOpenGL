@@ -87,5 +87,12 @@
     <None Include="src\Shaders\debugDepthQuad.fs" />
     <None Include="src\Shaders\shadowShader.vs" />
     <None Include="src\Shaders\shadowShader.fs" />
+    <None Include="src\Shaders\shadowCubemapShader.vs" />
+    <None Include="src\Shaders\shadowCubemapShader.fs" />
+    <None Include="src\Shaders\shadowCubemapShader.gs" />
+    <None Include="src\Shaders\pointLightShader.vs" />
+    <None Include="src\Shaders\pointLightShader.fs" />
+    <None Include="src\Shaders\normalMapShader.vs" />
+    <None Include="src\Shaders\normalMapShader.fs" />
   </ItemGroup>
 </Project>
