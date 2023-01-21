@@ -75,16 +75,18 @@ int main()
 
 	// build and compile shaders
 	// -------------------------
-	Shader normalMapShader("./src/Shaders/normalMapShader.vs", "./src/Shaders/normalMapShader.fs");
+	Shader depthMapShader("./src/Shaders/depthMapShader.vs", "./src/Shaders/depthMapShader.fs");
 
 	// load textures
 	// -------------
-	unsigned int diffuseTexture = loadTexture("./assets/textures/brickwall.jpg");
-	unsigned int normalTexture = loadTexture("./assets/textures/brickwall_normal.jpg");
+	unsigned int diffuseTexture = loadTexture("./assets/textures/bricks2.jpg");
+	unsigned int normalTexture = loadTexture("./assets/textures/bricks2_normal.jpg");
+	unsigned int depthTexture = loadTexture("./assets/textures/bricks2_disp.jpg");
 
-	normalMapShader.use();
-	normalMapShader.setInt("diffuseMap", 0);
-	normalMapShader.setInt("normalMap", 1);
+	depthMapShader.use();
+	depthMapShader.setInt("diffuseMap", 0);
+	depthMapShader.setInt("normalMap", 1);
+	depthMapShader.setInt("depthMap", 2);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -103,26 +105,29 @@ int main()
 
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
-		normalMapShader.use();
-		normalMapShader.setMat4("projection", projection);
-		normalMapShader.setMat4("view", view);
+		depthMapShader.use();
+		depthMapShader.setMat4("projection", projection);
+		depthMapShader.setMat4("view", view);
 
 		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::rotate(model, glm::radians((float)glfwGetTime() * -10.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0))); // rotate the quad to show normal mapping from multiple directions
-		normalMapShader.setMat4("model", model);
-		normalMapShader.setVec3("viewPos", camera.Position);
-		normalMapShader.setVec3("lightPos", lightPos);
+		depthMapShader.setMat4("model", model);
+		depthMapShader.setVec3("viewPos", camera.Position);
+		depthMapShader.setVec3("lightPos", lightPos);
+		float height_scale = 0.1f;
+		depthMapShader.setFloat("height_scale", height_scale);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, diffuseTexture);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, normalTexture);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, depthTexture);
 		renderQuad();
 
 		// render light source (simply re-renders a smaller plane at the light's position for debugging/visualization)
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, lightPos);
 		model = glm::scale(model, glm::vec3(0.1f));
-		normalMapShader.setMat4("model", model);
+		depthMapShader.setMat4("model", model);
 		renderQuad();
 
 		glfwSwapBuffers(window);

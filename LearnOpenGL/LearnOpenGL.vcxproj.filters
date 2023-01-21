@@ -94,5 +94,7 @@
     <None Include="src\Shaders\pointLightShader.fs" />
     <None Include="src\Shaders\normalMapShader.vs" />
     <None Include="src\Shaders\normalMapShader.fs" />
+    <None Include="src\Shaders\depthMapShader.vs" />
+    <None Include="src\Shaders\depthMapShader.fs" />
   </ItemGroup>
 </Project>
