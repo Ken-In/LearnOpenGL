@@ -100,5 +100,11 @@
     <None Include="src\Shaders\hdrShader.fs" />
     <None Include="src\Shaders\lightingShader.fs" />
     <None Include="src\Shaders\lightingShader.vs" />
+    <None Include="src\Shaders\bloom.fs" />
+    <None Include="src\Shaders\bloom.vs" />
+    <None Include="src\Shaders\bloom_final.fs" />
+    <None Include="src\Shaders\bloom_final.vs" />
+    <None Include="src\Shaders\blur.fs" />
+    <None Include="src\Shaders\blur.vs" />
   </ItemGroup>
 </Project>

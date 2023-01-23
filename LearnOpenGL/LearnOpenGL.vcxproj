@@ -166,6 +166,12 @@
     <None Include="src\Shaders\blendShader.vs" />
     <None Include="src\Shaders\blinnPhongShader.fs" />
     <None Include="src\Shaders\blinnPhongShader.vs" />
+    <None Include="src\Shaders\bloom.fs" />
+    <None Include="src\Shaders\bloom.vs" />
+    <None Include="src\Shaders\bloom_final.fs" />
+    <None Include="src\Shaders\bloom_final.vs" />
+    <None Include="src\Shaders\blur.fs" />
+    <None Include="src\Shaders\blur.vs" />
     <None Include="src\Shaders\cubeMapShader.fs" />
     <None Include="src\Shaders\cubeMapShader.vs" />
     <None Include="src\Shaders\depthMapShader.fs" />
