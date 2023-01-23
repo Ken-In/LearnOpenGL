@@ -177,6 +177,10 @@
     <None Include="src\Shaders\geometryShader.fs" />
     <None Include="src\Shaders\geometryShader.gs" />
     <None Include="src\Shaders\geometryShader.vs" />
+    <None Include="src\Shaders\hdrShader.fs" />
+    <None Include="src\Shaders\hdrShader.vs" />
+    <None Include="src\Shaders\lightingShader.fs" />
+    <None Include="src\Shaders\lightingShader.vs" />
     <None Include="src\Shaders\lightShader.fs" />
     <None Include="src\Shaders\lightShader.vs" />
     <None Include="src\Shaders\model_loading.fs" />
