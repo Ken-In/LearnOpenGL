@@ -226,6 +226,12 @@
     <None Include="src\Shaders\shadowShader.vs" />
     <None Include="src\Shaders\simpleDepthShader.fs" />
     <None Include="src\Shaders\simpleDepthShader.vs" />
+    <None Include="src\Shaders\ssao\ssao.fs" />
+    <None Include="src\Shaders\ssao\ssao.vs" />
+    <None Include="src\Shaders\ssao\ssao_blur.fs" />
+    <None Include="src\Shaders\ssao\ssao_geometry.fs" />
+    <None Include="src\Shaders\ssao\ssao_geometry.vs" />
+    <None Include="src\Shaders\ssao\ssao_lighting.fs" />
     <None Include="src\Shaders\stencilShader.fs" />
     <None Include="src\Shaders\stencilShader.vs" />
   </ItemGroup>

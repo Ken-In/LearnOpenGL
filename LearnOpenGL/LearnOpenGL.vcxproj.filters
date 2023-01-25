@@ -112,5 +112,11 @@
     <None Include="src\Shaders\deferred\deferred_shading.fs" />
     <None Include="src\Shaders\deferred\deferred_light_box.vs" />
     <None Include="src\Shaders\deferred\deferred_light_box.fs" />
+    <None Include="src\Shaders\ssao\ssao.vs" />
+    <None Include="src\Shaders\ssao\ssao.fs" />
+    <None Include="src\Shaders\ssao\ssao_blur.fs" />
+    <None Include="src\Shaders\ssao\ssao_geometry.fs" />
+    <None Include="src\Shaders\ssao\ssao_geometry.vs" />
+    <None Include="src\Shaders\ssao\ssao_lighting.fs" />
   </ItemGroup>
 </Project>
