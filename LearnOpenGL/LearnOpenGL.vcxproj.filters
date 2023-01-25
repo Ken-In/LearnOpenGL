@@ -106,5 +106,11 @@
     <None Include="src\Shaders\bloom_final.vs" />
     <None Include="src\Shaders\blur.fs" />
     <None Include="src\Shaders\blur.vs" />
+    <None Include="src\Shaders\deferred\g_buffer.vs" />
+    <None Include="src\Shaders\deferred\g_buffer.fs" />
+    <None Include="src\Shaders\deferred\deferred_shading.vs" />
+    <None Include="src\Shaders\deferred\deferred_shading.fs" />
+    <None Include="src\Shaders\deferred\deferred_light_box.vs" />
+    <None Include="src\Shaders\deferred\deferred_light_box.fs" />
   </ItemGroup>
 </Project>

@@ -174,6 +174,12 @@
     <None Include="src\Shaders\blur.vs" />
     <None Include="src\Shaders\cubeMapShader.fs" />
     <None Include="src\Shaders\cubeMapShader.vs" />
+    <None Include="src\Shaders\deferred\deferred_light_box.fs" />
+    <None Include="src\Shaders\deferred\deferred_light_box.vs" />
+    <None Include="src\Shaders\deferred\deferred_shading.fs" />
+    <None Include="src\Shaders\deferred\deferred_shading.vs" />
+    <None Include="src\Shaders\deferred\g_buffer.fs" />
+    <None Include="src\Shaders\deferred\g_buffer.vs" />
     <None Include="src\Shaders\depthMapShader.fs" />
     <None Include="src\Shaders\depthMapShader.vs" />
     <None Include="src\Shaders\depthShader.fs" />
