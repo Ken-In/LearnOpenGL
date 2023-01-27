@@ -77,7 +77,15 @@ int main()
 
 	// build and compile shaders
 	// -------------------------
-	Shader shaderPBR("./src/Shaders/pbr/pbr.vs", "./src/Shaders/pbr/pbr.fs");
+	Shader shaderPBR("./src/Shaders/pbr/pbr.vs", "./src/Shaders/pbr/pbrTextured.fs");
+
+	// load PBR material textures
+	// --------------------------
+	unsigned int albedo = loadTexture("./assets/textures/pbr/rusted_iron/albedo.png", true);
+	unsigned int normal = loadTexture("./assets/textures/pbr/rusted_iron/normal.png", true);
+	unsigned int metallic = loadTexture("./assets/textures/pbr/rusted_iron/metallic.png", true);
+	unsigned int roughness = loadTexture("./assets/textures/pbr/rusted_iron/roughness.png", true);
+	unsigned int ao = loadTexture("./assets/textures/pbr/rusted_iron/ao.png", true);
 	
 	// lights
 	// ------
@@ -93,13 +101,16 @@ int main()
 		glm::vec3(300.0f, 300.0f, 300.0f),
 		glm::vec3(300.0f, 300.0f, 300.0f)
 	};
-	int nrRows = 7;
-	int nrColumns = 7;
+	int nrRows = 3;
+	int nrColumns = 3;
 	float spacing = 2.5;
 
 	shaderPBR.use();
-	shaderPBR.setVec3("albedo", 0.5f, 0.0f, 0.0f);
-	shaderPBR.setFloat("ao", 1.0f);
+	shaderPBR.setInt("albedoMap", 0);
+	shaderPBR.setInt("normalMap", 1);
+	shaderPBR.setInt("metallicMap", 2);
+	shaderPBR.setInt("roughnessMap", 3);
+	shaderPBR.setInt("aoMap", 4);
 
 	// initialize static shader uniforms before rendering
 	// --------------------------------------------------
@@ -127,7 +138,6 @@ int main()
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 model(1.0f);
 		
@@ -135,13 +145,21 @@ int main()
 		shaderPBR.setMat4("view", view);
 		shaderPBR.setVec3("camPos", camera.Position);
 
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, albedo);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, normal);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, metallic);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, roughness);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, ao);
+
 		for (int row = 0; row < nrRows; row++)
 		{
-			shaderPBR.setFloat("metallic", (float)row / (float)nrRows);
 			for (int col = 0; col < nrColumns; col++)
 			{
-				shaderPBR.setFloat("roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 1.0f));
-
 				model = glm::mat4(1.0f);
 				model = glm::translate(model, glm::vec3(
 					(col - (nrColumns / 2)) * spacing, 
