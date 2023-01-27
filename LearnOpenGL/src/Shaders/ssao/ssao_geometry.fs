@@ -10,9 +10,9 @@ in vec3 Normal;
 void main()
 {    
     // store the fragment position vector in the first gbuffer texture
-    gPosition = FragPos;
+    gPosition = FragPos;//view space pos
     // also store the per-fragment normals into the gbuffer
-    gNormal = normalize(Normal);
+    gNormal = normalize(Normal);//view space
     // and the diffuse per-fragment color
     gAlbedo.rgb = vec3(0.95);
 }

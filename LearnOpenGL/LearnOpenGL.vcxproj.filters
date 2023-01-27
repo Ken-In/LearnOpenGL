@@ -118,5 +118,8 @@
     <None Include="src\Shaders\ssao\ssao_geometry.fs" />
     <None Include="src\Shaders\ssao\ssao_geometry.vs" />
     <None Include="src\Shaders\ssao\ssao_lighting.fs" />
+    <None Include="src\Shaders\pbr\pbr.fs" />
+    <None Include="src\Shaders\pbr\pbr.vs" />
+    <None Include="src\Shaders\pbr\pbrTextured.fs" />
   </ItemGroup>
 </Project>

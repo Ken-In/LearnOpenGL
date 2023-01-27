@@ -202,6 +202,9 @@
     <None Include="src\Shaders\normalDisplayShader.vs" />
     <None Include="src\Shaders\normalMapShader.fs" />
     <None Include="src\Shaders\normalMapShader.vs" />
+    <None Include="src\Shaders\pbr\pbr.fs" />
+    <None Include="src\Shaders\pbr\pbr.vs" />
+    <None Include="src\Shaders\pbr\pbrTextured.fs" />
     <None Include="src\Shaders\planetShader.fs" />
     <None Include="src\Shaders\planetShader.vs" />
     <None Include="src\Shaders\pointLightShader.fs" />
