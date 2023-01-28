@@ -121,5 +121,9 @@
     <None Include="src\Shaders\pbr\pbr.fs" />
     <None Include="src\Shaders\pbr\pbr.vs" />
     <None Include="src\Shaders\pbr\pbrTextured.fs" />
+    <None Include="src\Shaders\ibl\equirectangular_to_cubemap.fs" />
+    <None Include="src\Shaders\ibl\cubemap.vs" />
+    <None Include="src\Shaders\ibl\backgroundShader.vs" />
+    <None Include="src\Shaders\ibl\backgroundShader.fs" />
   </ItemGroup>
 </Project>

@@ -191,6 +191,10 @@
     <None Include="src\Shaders\geometryShader.vs" />
     <None Include="src\Shaders\hdrShader.fs" />
     <None Include="src\Shaders\hdrShader.vs" />
+    <None Include="src\Shaders\ibl\backgroundShader.fs" />
+    <None Include="src\Shaders\ibl\backgroundShader.vs" />
+    <None Include="src\Shaders\ibl\cubemap.vs" />
+    <None Include="src\Shaders\ibl\equirectangular_to_cubemap.fs" />
     <None Include="src\Shaders\lightingShader.fs" />
     <None Include="src\Shaders\lightingShader.vs" />
     <None Include="src\Shaders\lightShader.fs" />

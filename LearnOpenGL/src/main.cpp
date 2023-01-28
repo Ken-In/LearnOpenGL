@@ -15,6 +15,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 unsigned int loadTexture(const char* path, bool gammaCorrection);
+unsigned int loadHDR(const char* path);
 void renderQuad();
 void renderCube();
 void renderSphere();
@@ -24,7 +25,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 20.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));
 float lastX = (float)SCR_WIDTH / 2.0;
 float lastY = (float)SCR_HEIGHT / 2.0;
 bool firstMouse = true;
@@ -78,6 +79,8 @@ int main()
 	// build and compile shaders
 	// -------------------------
 	Shader shaderPBR("./src/Shaders/pbr/pbr.vs", "./src/Shaders/pbr/pbrTextured.fs");
+	Shader equirectangularToCubemapShader("./src/Shaders/ibl/cubemap.vs", "./src/Shaders/ibl/equirectangular_to_cubemap.fs");
+	Shader backgroundShader("./src/Shaders/ibl/backgroundShader.vs", "./src/Shaders/ibl/backgroundShader.fs");
 
 	// load PBR material textures
 	// --------------------------
@@ -86,6 +89,8 @@ int main()
 	unsigned int metallic = loadTexture("./assets/textures/pbr/rusted_iron/metallic.png", true);
 	unsigned int roughness = loadTexture("./assets/textures/pbr/rusted_iron/roughness.png", true);
 	unsigned int ao = loadTexture("./assets/textures/pbr/rusted_iron/ao.png", true);
+
+	unsigned int hdrTexture = loadHDR("./assets/textures/hdr/newport_loft.hdr");
 	
 	// lights
 	// ------
@@ -105,23 +110,82 @@ int main()
 	int nrColumns = 3;
 	float spacing = 2.5;
 
+	// pbr: setup framebuffer
+   // ----------------------
+	unsigned int captureFBO;
+	unsigned int captureRBO;
+	glGenFramebuffers(1, &captureFBO);
+	glGenRenderbuffers(1, &captureRBO);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureRBO);
+
+	// pbr: setup cubemap to render to and attach to framebuffer
+	// ---------------------------------------------------------
+	unsigned int envCubemap;
+	glGenTextures(1, &envCubemap);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+	for (unsigned int i = 0; i < 6; ++i)
+	{
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// pbr: set up projection and view matrices for capturing data onto the 6 cubemap face directions
+	// ----------------------------------------------------------------------------------------------
+	glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+	glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+	glm::mat4 captureViews[] =
+	{
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+	};
+
+	equirectangularToCubemapShader.use();
+	equirectangularToCubemapShader.setInt("equirectangularMap", 0);
+	equirectangularToCubemapShader.setMat4("projection", captureProjection);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, hdrTexture);
+
+	glViewport(0, 0, 512, 512);
+	glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+	for (unsigned int i = 0; i < 6; i++)
+	{
+		equirectangularToCubemapShader.setMat4("view", captureViews[i]);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, envCubemap, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		renderCube();
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
 	shaderPBR.use();
 	shaderPBR.setInt("albedoMap", 0);
 	shaderPBR.setInt("normalMap", 1);
 	shaderPBR.setInt("metallicMap", 2);
 	shaderPBR.setInt("roughnessMap", 3);
 	shaderPBR.setInt("aoMap", 4);
-
-	// initialize static shader uniforms before rendering
-	// --------------------------------------------------
-	glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 	shaderPBR.setMat4("projection", projection);
-
 	for (unsigned int i = 0; i < sizeof(lightPositions) / sizeof(lightPositions[0]); ++i)
 	{
 		shaderPBR.setVec3("lightPositions[" + std::to_string(i) + "]", lightPositions[i]);
 		shaderPBR.setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
 	}
+
+	backgroundShader.use();
+	backgroundShader.setMat4("projection", projection);
+	backgroundShader.setInt("environmentMap", 0);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -182,6 +246,14 @@ int main()
 			shaderPBR.setMat4("model", model);
 			renderSphere();
 		}
+
+		//background cubemap --------------------------------------------
+		glDepthFunc(GL_LEQUAL);
+		backgroundShader.use();
+		backgroundShader.setMat4("view", view);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, envCubemap);
+		renderCube();
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -490,5 +562,33 @@ unsigned int loadTexture(char const* path, bool gammaCorrection)
 	}
 
 	//glBindTexture(GL_TEXTURE_2D, 0);
+	return textureID;
+}
+
+unsigned int loadHDR(char const* path)
+{
+	unsigned int textureID;
+	stbi_set_flip_vertically_on_load(true);
+	int width, height, nrComponents;
+	float* data = stbi_loadf(path, &width, &height, &nrComponents, 0);
+	if (data)
+	{
+		glGenTextures(1, &textureID);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		stbi_image_free(data);
+	}
+	else
+	{
+		std::cout << "Texture failed to load HDR image at path: " << path << std::endl;
+		stbi_image_free(data);
+	}
+
 	return textureID;
 }
