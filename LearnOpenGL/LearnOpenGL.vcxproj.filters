@@ -125,5 +125,7 @@
     <None Include="src\Shaders\ibl\cubemap.vs" />
     <None Include="src\Shaders\ibl\backgroundShader.vs" />
     <None Include="src\Shaders\ibl\backgroundShader.fs" />
+    <None Include="src\Shaders\ibl\irradiance_convolution.fs" />
+    <None Include="src\Shaders\ibl\pbrTextured.fs" />
   </ItemGroup>
 </Project>
