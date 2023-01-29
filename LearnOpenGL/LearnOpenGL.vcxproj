@@ -193,10 +193,14 @@
     <None Include="src\Shaders\hdrShader.vs" />
     <None Include="src\Shaders\ibl\backgroundShader.fs" />
     <None Include="src\Shaders\ibl\backgroundShader.vs" />
+    <None Include="src\Shaders\ibl\brdf.fs" />
+    <None Include="src\Shaders\ibl\brdf.vs" />
     <None Include="src\Shaders\ibl\cubemap.vs" />
     <None Include="src\Shaders\ibl\equirectangular_to_cubemap.fs" />
     <None Include="src\Shaders\ibl\irradiance_convolution.fs" />
+    <None Include="src\Shaders\ibl\pbrIBLSpecular.fs" />
     <None Include="src\Shaders\ibl\pbrTextured.fs" />
+    <None Include="src\Shaders\ibl\prefilter.fs" />
     <None Include="src\Shaders\lightingShader.fs" />
     <None Include="src\Shaders\lightingShader.vs" />
     <None Include="src\Shaders\lightShader.fs" />

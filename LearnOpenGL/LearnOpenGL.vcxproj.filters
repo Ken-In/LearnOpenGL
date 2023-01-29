@@ -127,5 +127,9 @@
     <None Include="src\Shaders\ibl\backgroundShader.fs" />
     <None Include="src\Shaders\ibl\irradiance_convolution.fs" />
     <None Include="src\Shaders\ibl\pbrTextured.fs" />
+    <None Include="src\Shaders\ibl\prefilter.fs" />
+    <None Include="src\Shaders\ibl\brdf.vs" />
+    <None Include="src\Shaders\ibl\brdf.fs" />
+    <None Include="src\Shaders\ibl\pbrIBLSpecular.fs" />
   </ItemGroup>
 </Project>

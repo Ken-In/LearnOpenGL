@@ -25,7 +25,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));
+Camera camera(glm::vec3(-1.0f, 0.0f, 13.0f));
 float lastX = (float)SCR_WIDTH / 2.0;
 float lastY = (float)SCR_HEIGHT / 2.0;
 bool firstMouse = true;
@@ -75,41 +75,87 @@ int main()
 	// configure global opengl state
 	// -----------------------------
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	// build and compile shaders
 	// -------------------------
-	Shader shaderPBR("./src/Shaders/pbr/pbr.vs", "./src/Shaders/ibl/pbrTextured.fs");
+	Shader shaderPBR("./src/Shaders/pbr/pbr.vs", "./src/Shaders/ibl/pbrIBLSpecular.fs");
 	Shader equirectangularToCubemapShader("./src/Shaders/ibl/cubemap.vs", "./src/Shaders/ibl/equirectangular_to_cubemap.fs");
 	Shader irradianceShader("./src/Shaders/ibl/cubemap.vs", "./src/Shaders/ibl/irradiance_convolution.fs");
+	Shader prefilterShader("./src/Shaders/ibl/cubemap.vs", "./src/Shaders/ibl/prefilter.fs");
+	Shader brdfShader("./src/Shaders/ibl/brdf.vs", "./src/Shaders/ibl/brdf.fs");
 	Shader backgroundShader("./src/Shaders/ibl/backgroundShader.vs", "./src/Shaders/ibl/backgroundShader.fs");
+
+	//Model gun("./assets/models/gun/Cerberus_LP.FBX");
 
 	// load PBR material textures
 	// --------------------------
-	unsigned int albedo = loadTexture("./assets/textures/pbr/rusted_iron/albedo.png", true);
-	unsigned int normal = loadTexture("./assets/textures/pbr/rusted_iron/normal.png", true);
-	unsigned int metallic = loadTexture("./assets/textures/pbr/rusted_iron/metallic.png", true);
-	unsigned int roughness = loadTexture("./assets/textures/pbr/rusted_iron/roughness.png", true);
-	unsigned int ao = loadTexture("./assets/textures/pbr/rusted_iron/ao.png", true);
+	// rusted iron
+	unsigned int ironAlbedoMap = loadTexture("./assets/textures/pbr/rusted_iron/albedo.png", true);
+	unsigned int ironNormalMap = loadTexture("./assets/textures/pbr/rusted_iron/normal.png", true);
+	unsigned int ironMetallicMap = loadTexture("./assets/textures/pbr/rusted_iron/metallic.png", true);
+	unsigned int ironRoughnessMap = loadTexture("./assets/textures/pbr/rusted_iron/roughness.png", true);
+	unsigned int ironAOMap = loadTexture("./assets/textures/pbr/rusted_iron/ao.png", true);
+
+	// gold
+	unsigned int goldAlbedoMap = loadTexture("./assets/textures/pbr/gold/albedo.png", true);
+	unsigned int goldNormalMap = loadTexture("./assets/textures/pbr/gold/normal.png", true);
+	unsigned int goldMetallicMap = loadTexture("./assets/textures/pbr/gold/metallic.png", true);
+	unsigned int goldRoughnessMap = loadTexture("./assets/textures/pbr/gold/roughness.png", true);
+	unsigned int goldAOMap = loadTexture("./assets/textures/pbr/gold/ao.png", true);
+
+	// grass
+	unsigned int grassAlbedoMap = loadTexture("./assets/textures/pbr/grass/albedo.png", true);
+	unsigned int grassNormalMap = loadTexture("./assets/textures/pbr/grass/normal.png", true);
+	unsigned int grassMetallicMap = loadTexture("./assets/textures/pbr/grass/metallic.png", true);
+	unsigned int grassRoughnessMap = loadTexture("./assets/textures/pbr/grass/roughness.png", true);
+	unsigned int grassAOMap = loadTexture("./assets/textures/pbr/grass/ao.png", true);
+
+	// plastic
+	unsigned int plasticAlbedoMap = loadTexture("./assets/textures/pbr/plastic/albedo.png", true);
+	unsigned int plasticNormalMap = loadTexture("./assets/textures/pbr/plastic/normal.png", true);
+	unsigned int plasticMetallicMap = loadTexture("./assets/textures/pbr/plastic/metallic.png", true);
+	unsigned int plasticRoughnessMap = loadTexture("./assets/textures/pbr/plastic/roughness.png", true);
+	unsigned int plasticAOMap = loadTexture("./assets/textures/pbr/plastic/ao.png", true);
+
+	// wall
+	unsigned int wallAlbedoMap = loadTexture("./assets/textures/pbr/wall/albedo.png", true);
+	unsigned int wallNormalMap = loadTexture("./assets/textures/pbr/wall/normal.png", true);
+	unsigned int wallMetallicMap = loadTexture("./assets/textures/pbr/wall/metallic.png", true);
+	unsigned int wallRoughnessMap = loadTexture("./assets/textures/pbr/wall/roughness.png", true);
+	unsigned int wallAOMap = loadTexture("./assets/textures/pbr/wall/ao.png", true);
+
+	unsigned int gunAlbedo = loadTexture("./assets/models/gun/Cerberus_A.jpg", true);
+	unsigned int gunNormal = loadTexture("./assets/models/gun/Cerberus_N.jpg", true);
+	unsigned int gunMetallic = loadTexture("./assets/models/gun/Cerberus_M.jpg", true);
+	unsigned int gunRoughness = loadTexture("./assets/models/gun/Cerberus_R.jpg", true);
+	unsigned int gunAo = loadTexture("./assets/models/gun/Textures/Raw/Cerberus_AO.tga", true);
 
 	unsigned int hdrTexture = loadHDR("./assets/textures/hdr/newport_loft.hdr");
 	
 	// lights
 	// ------
 	glm::vec3 lightPositions[] = {
-		glm::vec3(-10.0f,  10.0f, 10.0f),
-		glm::vec3(10.0f,  10.0f, 10.0f),
-		glm::vec3(-10.0f, -10.0f, 10.0f),
-		glm::vec3(10.0f, -10.0f, 10.0f),
+		glm::vec3(-10.0f, 3.0f, 10.0f)
 	};
 	glm::vec3 lightColors[] = {
-		glm::vec3(300.0f, 300.0f, 300.0f),
-		glm::vec3(300.0f, 300.0f, 300.0f),
-		glm::vec3(300.0f, 300.0f, 300.0f),
 		glm::vec3(300.0f, 300.0f, 300.0f)
 	};
 	int nrRows = 3;
 	int nrColumns = 3;
 	float spacing = 2.5;
+
+	glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+	glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+	glm::mat4 captureViews[] =
+	{
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+	};
 
 	// pbr: setup framebuffer
    // ----------------------
@@ -123,7 +169,7 @@ int main()
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureRBO);
 
-	// pbr: setup cubemap to render to and attach to framebuffer
+	// 柱状图转化到cubemap，配置cubemap纹理
 	// ---------------------------------------------------------
 	unsigned int envCubemap;
 	glGenTextures(1, &envCubemap);
@@ -138,20 +184,7 @@ int main()
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	// pbr: set up projection and view matrices for capturing data onto the 6 cubemap face directions
-	// ----------------------------------------------------------------------------------------------
-	glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-	glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-	glm::mat4 captureViews[] =
-	{
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
-	};
-
+	// 绘制cubemap----------------------------------------------
 	equirectangularToCubemapShader.use();
 	equirectangularToCubemapShader.setInt("equirectangularMap", 0);
 	equirectangularToCubemapShader.setMat4("projection", captureProjection);
@@ -170,8 +203,8 @@ int main()
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	// pbr: create an irradiance cubemap, and re-scale capture FBO to irradiance scale.
-   // --------------------------------------------------------------------------------
+	// 配置irradianceMap纹理
+    // -----------------------------------------------------------
 	unsigned int irradianceMap;
 	glGenTextures(1, &irradianceMap);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
@@ -189,9 +222,6 @@ int main()
 	glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
-
-	// pbr: solve diffuse integral by convolution to create an irradiance (cube)map.
-	// -----------------------------------------------------------------------------
 	irradianceShader.use();
 	irradianceShader.setInt("environmentMap", 0);
 	irradianceShader.setMat4("projection", captureProjection);
@@ -210,13 +240,86 @@ int main()
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	// 预滤波HDR环境贴图 渲染几个mipmap层级的cubemap 根据粗糙度模糊
+	// 创建prefilterMap纹理
+	unsigned int prefilterMap;
+	glGenTextures(1, &prefilterMap);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap);
+	for (unsigned int i = 0; i < 6; ++i)
+	{
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 128, 128, 0, GL_RGB, GL_FLOAT, nullptr);
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	// 绘制prefilterMap
+	prefilterShader.use();
+	prefilterShader.setInt("environmentMap", 0);
+	prefilterShader.setMat4("projection", captureProjection);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+	unsigned int maxMipLevels = 5;
+	for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
+	{
+		// reisze framebuffer according to mip-level size.
+		unsigned int mipWidth = static_cast<unsigned int>(128 * std::pow(0.5, mip));
+		unsigned int mipHeight = static_cast<unsigned int>(128 * std::pow(0.5, mip));
+		glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mipWidth, mipHeight);
+		glViewport(0, 0, mipWidth, mipHeight);
+
+		float roughness = (float)mip / (float)(maxMipLevels - 1);
+		prefilterShader.setFloat("roughness", roughness);
+		for (unsigned int i = 0; i < 6; ++i)
+		{
+			prefilterShader.setMat4("view", captureViews[i]);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilterMap, mip);
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			renderCube();
+		}
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	//创建brdfLUT 也就是高光的brdf项预计算贴图
+	unsigned int brdfLUTTexture;
+	glGenTextures(1, &brdfLUTTexture);
+	glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUTTexture, 0);
+	// 渲染brdfLUT
+	glViewport(0, 0, 512, 512);
+	brdfShader.use();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	renderQuad();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+	// initialize static shader uniforms before rendering
+   // --------------------------------------------------
 	shaderPBR.use();
-	shaderPBR.setInt("albedoMap", 0);
-	shaderPBR.setInt("normalMap", 1);
-	shaderPBR.setInt("metallicMap", 2);
-	shaderPBR.setInt("roughnessMap", 3);
-	shaderPBR.setInt("aoMap", 4);
-	shaderPBR.setInt("irradianceMap", 5);
+	shaderPBR.setInt("irradianceMap", 0);
+	shaderPBR.setInt("prefilterMap", 1);
+	shaderPBR.setInt("brdfLUT", 2);
+	shaderPBR.setInt("albedoMap", 3);
+	shaderPBR.setInt("normalMap", 4);
+	shaderPBR.setInt("metallicMap", 5);
+	shaderPBR.setInt("roughnessMap", 6);
+	shaderPBR.setInt("aoMap", 7);
 	shaderPBR.setMat4("projection", projection);
 	for (unsigned int i = 0; i < sizeof(lightPositions) / sizeof(lightPositions[0]); ++i)
 	{
@@ -244,52 +347,134 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 		
+		shaderPBR.use();
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 model(1.0f);
-		
-		shaderPBR.use();
 		shaderPBR.setMat4("view", view);
 		shaderPBR.setVec3("camPos", camera.Position);
-
+		
+		// bind pre-computed IBL data
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, albedo);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, normal);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, metallic);
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, roughness);
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_2D, ao);
-		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
 
-		for (int row = 0; row < nrRows; row++)
-		{
-			for (int col = 0; col < nrColumns; col++)
-			{
-				model = glm::mat4(1.0f);
-				model = glm::translate(model, glm::vec3(
-					(col - (nrColumns / 2)) * spacing, 
-					(row - (nrRows / 2)) * spacing,
-					0.0f
-				));
-				shaderPBR.setMat4("model", model);
-				renderSphere();
-			}
-		}
+		// rusted iron
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, ironAlbedoMap);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, ironNormalMap);
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, ironMetallicMap);
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_2D, ironRoughnessMap);
+		glActiveTexture(GL_TEXTURE7);
+		glBindTexture(GL_TEXTURE_2D, ironAOMap);
 
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(-5.0, 0.0, 2.0));
+		shaderPBR.setMat4("model", model);
+		renderSphere();
+
+		// gold
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, goldAlbedoMap);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, goldNormalMap);
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, goldMetallicMap);
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_2D, goldRoughnessMap);
+		glActiveTexture(GL_TEXTURE7);
+		glBindTexture(GL_TEXTURE_2D, goldAOMap);
+
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(-3.0, 0.0, 2.0));
+		shaderPBR.setMat4("model", model);
+		renderSphere();
+
+		// grass
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, grassAlbedoMap);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, grassNormalMap);
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, grassMetallicMap);
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_2D, grassRoughnessMap);
+		glActiveTexture(GL_TEXTURE7);
+		glBindTexture(GL_TEXTURE_2D, grassAOMap);
+
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(-1.0, 0.0, 2.0));
+		shaderPBR.setMat4("model", model);
+		renderSphere();
+
+		// plastic
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, plasticAlbedoMap);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, plasticNormalMap);
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, plasticMetallicMap);
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_2D, plasticRoughnessMap);
+		glActiveTexture(GL_TEXTURE7);
+		glBindTexture(GL_TEXTURE_2D, plasticAOMap);
+
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(1.0, 0.0, 2.0));
+		shaderPBR.setMat4("model", model);
+		renderSphere();
+
+		// wall
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, wallAlbedoMap);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, wallNormalMap);
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, wallMetallicMap);
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_2D, wallRoughnessMap);
+		glActiveTexture(GL_TEXTURE7);
+		glBindTexture(GL_TEXTURE_2D, wallAOMap);
+
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(3.0, 0.0, 2.0));
+		shaderPBR.setMat4("model", model);
+		renderSphere();
+
+		//gun 枪的渲染有问题
+// 		glActiveTexture(GL_TEXTURE3);
+// 		glBindTexture(GL_TEXTURE_2D, gunAlbedo);
+// 		glActiveTexture(GL_TEXTURE4);
+// 		glBindTexture(GL_TEXTURE_2D, gunNormal);
+// 		glActiveTexture(GL_TEXTURE5);
+// 		glBindTexture(GL_TEXTURE_2D, gunMetallic);
+// 		glActiveTexture(GL_TEXTURE6);
+// 		glBindTexture(GL_TEXTURE_2D, gunRoughness);
+// 
+// 		model = glm::mat4(1.0f);
+// 		model = glm::translate(model, glm::vec3(-3.0, 3.0, 2.0));
+// 		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+// 		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+// 		model = glm::scale(model, glm::vec3(0.05f, 0.05f, 0.05f));
+// 		shaderPBR.setMat4("model", model);
+// 		gun.Draw(shaderPBR);
+		
 		// render light source (simply re-render sphere at light positions)
 		// this looks a bit off as we use the same shaderPBR, but it'll make their positions obvious and 
 		// keeps the codeprint small.
-		for (unsigned int i = 0; i < sizeof(lightPositions) / sizeof(lightPositions[0]); ++i)
-		{
-			model = glm::mat4(1.0f);
-			model = glm::translate(model, lightPositions[i]);
-			model = glm::scale(model, glm::vec3(0.5f));
-			shaderPBR.setMat4("model", model);
-			renderSphere();
-		}
+// 		for (unsigned int i = 0; i < sizeof(lightPositions) / sizeof(lightPositions[0]); ++i)
+// 		{
+// 			model = glm::mat4(1.0f);
+// 			model = glm::translate(model, lightPositions[i]);
+// 			model = glm::scale(model, glm::vec3(0.5f));
+// 			shaderPBR.setMat4("model", model);
+// 			renderSphere();
+// 		}
 
 		//background cubemap --------------------------------------------
 		glDepthFunc(GL_LEQUAL);
