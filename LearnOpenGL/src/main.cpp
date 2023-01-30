@@ -19,6 +19,27 @@ unsigned int loadHDR(const char* path);
 void renderQuad();
 void renderCube();
 void renderSphere();
+GLenum glCheckError_(const char* file, int line)
+{
+	GLenum errorCode;
+	while ((errorCode = glGetError()) != GL_NO_ERROR)
+	{
+		std::string error;
+		switch (errorCode)
+		{
+		case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break;
+		case GL_INVALID_VALUE:                 error = "INVALID_VALUE"; break;
+		case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break;
+		//case GL_STACK_OVERFLOW:                error = "STACK_OVERFLOW"; break;
+		//case GL_STACK_UNDERFLOW:               error = "STACK_UNDERFLOW"; break;
+		case GL_OUT_OF_MEMORY:                 error = "OUT_OF_MEMORY"; break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION: error = "INVALID_FRAMEBUFFER_OPERATION"; break;
+		}
+		std::cout << error << " | " << file << " (" << line << ")" << std::endl;
+	}
+	return errorCode;
+}
+#define glCheckError() glCheckError_(__FILE__, __LINE__) 
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -50,19 +71,20 @@ int main()
 	// glfw window creation
 	// --------------------
 	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+	glfwMakeContextCurrent(window);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
 		return -1;
 	}
-	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 
 	// tell GLFW to capture our mouse
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 
 	// glad: load all OpenGL function pointers
 	// ---------------------------------------
@@ -71,11 +93,14 @@ int main()
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
+	glCheckError();
+
 
 	// configure global opengl state
 	// -----------------------------
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
 
 	// build and compile shaders
 	// -------------------------
@@ -87,6 +112,7 @@ int main()
 	Shader backgroundShader("./src/Shaders/ibl/backgroundShader.vs", "./src/Shaders/ibl/backgroundShader.fs");
 
 	//Model gun("./assets/models/gun/Cerberus_LP.FBX");
+
 
 	// load PBR material textures
 	// --------------------------
@@ -132,6 +158,8 @@ int main()
 	unsigned int gunAo = loadTexture("./assets/models/gun/Textures/Raw/Cerberus_AO.tga", true);
 
 	unsigned int hdrTexture = loadHDR("./assets/textures/hdr/newport_loft.hdr");
+
+	
 	
 	// lights
 	// ------
@@ -168,6 +196,7 @@ int main()
 	glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureRBO);
+	
 
 	// 柱状图转化到cubemap，配置cubemap纹理
 	// ---------------------------------------------------------
@@ -202,6 +231,8 @@ int main()
 		renderCube();
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
+
 
 	// 配置irradianceMap纹理
     // -----------------------------------------------------------
@@ -239,6 +270,7 @@ int main()
 		renderCube();
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
 
 	// 预滤波HDR环境贴图 渲染几个mipmap层级的cubemap 根据粗糙度模糊
 	// 创建prefilterMap纹理
@@ -285,6 +317,7 @@ int main()
 		}
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
 
 	//创建brdfLUT 也就是高光的brdf项预计算贴图
 	unsigned int brdfLUTTexture;
@@ -330,6 +363,23 @@ int main()
 	backgroundShader.use();
 	backgroundShader.setMat4("projection", projection);
 	backgroundShader.setInt("environmentMap", 0);
+
+	
+
+	unsigned int tex, textures;
+	void* data = nullptr;
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glCheckError();// 返回 0 (无错误)
+
+	glTexImage2D(GL_TEXTURE_3D, 0, GL_RGB, 512, 512, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+	glCheckError();// 返回 1280 (非法枚举)
+
+	glGenTextures(-5, &textures);
+	glCheckError();// 返回 1281 (非法值)
+
+	glCheckError();// 返回 0 (无错误)
 
 	while (!glfwWindowShouldClose(window))
 	{
